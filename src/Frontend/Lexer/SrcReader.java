@@ -42,7 +42,7 @@ public class SrcReader {
         return curLine >= contents.size();
     }
 
-    public void detectEmptyLine() {
+    public void detectLine() {
         while (!isEndOfFile() && curColumn >= contents.get(curLine).length()) {
             curLine++;
             curColumn = 0;
@@ -55,7 +55,7 @@ public class SrcReader {
 
     public void moveCol() {
         curColumn++;
-        detectEmptyLine();
+        detectLine();
     }
 
     public char tempNext() {
@@ -65,14 +65,20 @@ public class SrcReader {
         return ' ';
     }
 
+    public void skipMultiComments() {
+
+    }
 
     public void skipUseless() {
         if (isEndOfFile()) {
             return;
         }
         char now = contents.get(curLine).charAt(curColumn);
-        while (!isEndOfFile() && Character.isWhitespace(now)) {
+        while (Character.isWhitespace(now)) {
             moveCol();
+            if (isEndOfFile()) {
+                break;
+            }
             now = contents.get(curLine).charAt(curColumn);
         }
     }
@@ -81,11 +87,14 @@ public class SrcReader {
     public void analysis() {
         char now;
         while (!isEndOfFile()) {
-            detectEmptyLine();
+            detectLine();
             now = contents.get(curLine).charAt(curColumn);
             // System.out.println(now + " " + status + " " + dfa_status);
             if (status == SINGLECOMMENT) {
-                moveCol();
+                curLine++;
+                curColumn = 0;
+                status = NORMAL;
+                dfa_status = DFA_INIT;
             } else if (status == MULTICOMMENT) {
                 if (now == '*' && tempNext() == '/') {
                     moveCol();
@@ -96,11 +105,11 @@ public class SrcReader {
                     moveCol();
                 }
             } else {
-                if (now == '/' && tempNext() == '*') {
+                if (dfa_status != DFA_FORMATSTRING && now == '/' && tempNext() == '*') {
                     moveCol();
                     moveCol();
                     status = MULTICOMMENT;
-                } else if (now == '/' && tempNext() == '/') {
+                } else if (dfa_status != DFA_FORMATSTRING && now == '/' && tempNext() == '/') {
                     moveCol();
                     moveCol();
                     status = SINGLECOMMENT;
