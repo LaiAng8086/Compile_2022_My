@@ -42,9 +42,8 @@ public class SrcReader {
         return curLine >= contents.size();
     }
 
-    public void moveCol() {
-        curColumn++;
-        while (!isEndOfFile() && curColumn >= contents.get(curLine).length()) {  //in most cases it will display only once.
+    public void detectEmptyLine() {
+        while (!isEndOfFile() && curColumn >= contents.get(curLine).length()) {
             curLine++;
             curColumn = 0;
             if (status == SINGLECOMMENT) {
@@ -52,6 +51,11 @@ public class SrcReader {
                 dfa_status = DFA_INIT;
             }
         }
+    }
+
+    public void moveCol() {
+        curColumn++;
+        detectEmptyLine();
     }
 
     public char tempNext() {
@@ -73,9 +77,11 @@ public class SrcReader {
         }
     }
 
+
     public void analysis() {
         char now;
         while (!isEndOfFile()) {
+            detectEmptyLine();
             now = contents.get(curLine).charAt(curColumn);
             // System.out.println(now + " " + status + " " + dfa_status);
             if (status == SINGLECOMMENT) {

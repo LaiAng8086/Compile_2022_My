@@ -62,6 +62,7 @@ public class Token {
     }
 
     public void output() throws IOException {
+        // System.out.println(type + " " + cont + " " + loc);
         OutputHandler.outALine(type + " " + cont + "\n");
     }
 
