@@ -83,13 +83,26 @@ public class SrcReader {
         }
     }
 
+    public boolean detectComments(char now) {
+        if (now == '/' && tempNext() == '*') {
+            moveCol();
+            moveCol();
+            status = MULTICOMMENT;
+            return true;
+        } else if (now == '/' && tempNext() == '/') {
+            status = SINGLECOMMENT;
+            return true;
+        }
+        return false;
+    }
+
 
     public void analysis() {
         char now;
         while (!isEndOfFile()) {
             detectLine();
             now = contents.get(curLine).charAt(curColumn);
-            // System.out.println(now + " " + status + " " + dfa_status);
+            System.out.println(now + " " + status + " " + dfa_status);
             if (status == SINGLECOMMENT) {
                 curLine++;
                 curColumn = 0;
@@ -105,127 +118,120 @@ public class SrcReader {
                     moveCol();
                 }
             } else {
-                if (dfa_status != DFA_FORMATSTRING && now == '/' && tempNext() == '*') {
-                    moveCol();
-                    moveCol();
-                    status = MULTICOMMENT;
-                } else if (dfa_status != DFA_FORMATSTRING && now == '/' && tempNext() == '/') {
-                    moveCol();
-                    moveCol();
-                    status = SINGLECOMMENT;
-                } else {
-                    switch (dfa_status) {
-                        case DFA_INIT:
-                            if (now == '_' || (now >= 'a' && now <= 'z') || (now >= 'A' && now <= 'Z')) {
-                                nowIdent = String.valueOf(now);
-                                dfa_status = DFA_IDENT;
-                                moveCol();
-                            } else if (now >= '0' && now <= '9') {
-                                nowIntConst = String.valueOf(now);
-                                dfa_status = DFA_INTCONST;
-                                moveCol();
-                            } else if (now == '\"') {
-                                nowFormatString = String.valueOf(now);
-                                dfa_status = DFA_FORMATSTRING;
-                                moveCol();
-                            } else {
-                                if (now == '!' || now == '&' || now == '|' || now == '<' || now == '>' || now == '=') {
-                                    char tryNext = tempNext();
-                                    boolean ismatch = false;
-                                    if (tryNext != ' ') {
-                                        String tempTwo = now + String.valueOf(tryNext);
-                                        for (Map.Entry<String, String> t : Token.DOUBLEOP.entrySet()) {
-                                            if (tempTwo.equals(t.getValue())) {
-                                                tokenTo.addToken(new Token(t.getKey(), curLine, tempTwo));
-                                                moveCol();
-                                                moveCol();
-                                                ismatch = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    if (!ismatch) {
-                                        String tempOne = String.valueOf(now);
-                                        for (Map.Entry<String, String> t : Token.SINGLEOP.entrySet()) {
-                                            if (tempOne.equals(t.getValue())) {
-                                                tokenTo.addToken(new Token(t.getKey(), curLine, tempOne));
-                                                moveCol();
-                                                break;
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    String tempOne = String.valueOf(now);
-                                    boolean ismatch = false;
-                                    for (Map.Entry<String, String> t : Token.SINGLEOP.entrySet()) {
-                                        if (tempOne.equals(t.getValue())) {
-                                            tokenTo.addToken(new Token(t.getKey(), curLine, tempOne));
+                switch (dfa_status) {
+                    case DFA_INIT:
+                        if (detectComments(now)) {
+                            break;
+                        }
+                        if (now == '_' || (now >= 'a' && now <= 'z') || (now >= 'A' && now <= 'Z')) {
+                            nowIdent = String.valueOf(now);
+                            dfa_status = DFA_IDENT;
+                            moveCol();
+                        } else if (now >= '0' && now <= '9') {
+                            nowIntConst = String.valueOf(now);
+                            dfa_status = DFA_INTCONST;
+                            moveCol();
+                        } else if (now == '\"') {
+                            nowFormatString = String.valueOf(now);
+                            dfa_status = DFA_FORMATSTRING;
+                            moveCol();
+                        } else {
+                            if (now == '!' || now == '&' || now == '|' || now == '<' || now == '>' || now == '=') {
+                                char tryNext = tempNext();
+                                boolean ismatch = false;
+                                if (tryNext != ' ') {
+                                    String tempTwo = now + String.valueOf(tryNext);
+                                    for (Map.Entry<String, String> t : Token.DOUBLEOP.entrySet()) {
+                                        if (tempTwo.equals(t.getValue())) {
+                                            tokenTo.addToken(new Token(t.getKey(), curLine, tempTwo));
+                                            moveCol();
                                             moveCol();
                                             ismatch = true;
                                             break;
                                         }
                                     }
-                                    if (!ismatch) {
-                                        for (Map.Entry<String, String> t : Token.OTHER.entrySet()) {
-                                            if (tempOne.equals(t.getValue())) {
-                                                // System.out.print("Matched!");
-                                                tokenTo.addToken(new Token(t.getKey(), curLine, tempOne));
-                                                moveCol();
-                                                // System.out.println(curLine + " " + curColumn);
-                                                break;
-                                            }
+                                }
+                                if (!ismatch) {
+                                    String tempOne = String.valueOf(now);
+                                    for (Map.Entry<String, String> t : Token.SINGLEOP.entrySet()) {
+                                        if (tempOne.equals(t.getValue())) {
+                                            tokenTo.addToken(new Token(t.getKey(), curLine, tempOne));
+                                            moveCol();
+                                            break;
                                         }
                                     }
-                                    skipUseless();
                                 }
-                            }
-                            break;
-                        case DFA_IDENT:
-                            if (now == '_' || (now >= 'a' && now <= 'z') || (now >= 'A' && now <= 'Z') || (now >= '0' && now <= '9')) {
-                                nowIdent = nowIdent + String.valueOf(now);
-                                moveCol();
-                            } else { // No move!
-                                boolean isreserved = false;
-                                for (Map.Entry<String, String> t : Token.RESERVED.entrySet()) {
-                                    if (nowIdent.equals(t.getValue())) {
-                                        tokenTo.addToken(new Token(t.getKey(), curLine, nowIdent));
-                                        isreserved = true;
+                            } else {
+                                String tempOne = String.valueOf(now);
+                                boolean ismatch = false;
+                                for (Map.Entry<String, String> t : Token.SINGLEOP.entrySet()) {
+                                    if (tempOne.equals(t.getValue())) {
+                                        tokenTo.addToken(new Token(t.getKey(), curLine, tempOne));
+                                        moveCol();
+                                        ismatch = true;
                                         break;
                                     }
                                 }
-                                if (!isreserved) {
-                                    tokenTo.addToken(new Token("IDENFR", curLine, nowIdent));
+                                if (!ismatch) {
+                                    for (Map.Entry<String, String> t : Token.OTHER.entrySet()) {
+                                        if (tempOne.equals(t.getValue())) {
+                                            // System.out.print("Matched!");
+                                            tokenTo.addToken(new Token(t.getKey(), curLine, tempOne));
+                                            moveCol();
+                                            // System.out.println(curLine + " " + curColumn);
+                                            break;
+                                        }
+                                    }
                                 }
-                                nowIdent = null;
-                                dfa_status = DFA_INIT;
                                 skipUseless();
                             }
-                            break;
-                        case DFA_INTCONST:
-                            if (now >= '0' && now <= '9') {
-                                nowIntConst = nowIntConst + String.valueOf(now);
-                                moveCol();
-                            } else { //No move!
-                                tokenTo.addToken(new Token("INTCON", curLine, nowIntConst));
-                                nowIntConst = null;
-                                dfa_status = DFA_INIT;
-                                skipUseless();
+                        }
+                        break;
+                    case DFA_IDENT:
+                        if (now == '_' || (now >= 'a' && now <= 'z') || (now >= 'A' && now <= 'Z') || (now >= '0' && now <= '9')) {
+                            nowIdent = nowIdent + String.valueOf(now);
+                            moveCol();
+                        } else { // No move!
+                            boolean isreserved = false;
+                            for (Map.Entry<String, String> t : Token.RESERVED.entrySet()) {
+                                if (nowIdent.equals(t.getValue())) {
+                                    tokenTo.addToken(new Token(t.getKey(), curLine, nowIdent));
+                                    isreserved = true;
+                                    break;
+                                }
                             }
-                            break;
-                        case DFA_FORMATSTRING:
-                            if (now != '\"') {
-                                nowFormatString = nowFormatString + String.valueOf(now);
-                                moveCol();
-                            } else {
-                                nowFormatString = nowFormatString + String.valueOf(now);
-                                tokenTo.addToken(new Token("STRCON", curLine, nowFormatString));
-                                nowFormatString = null;
-                                dfa_status = DFA_INIT;
-                                moveCol();
+                            if (!isreserved) {
+                                tokenTo.addToken(new Token("IDENFR", curLine, nowIdent));
                             }
-                            break;
-                        default:
-                    }
+                            nowIdent = null;
+                            dfa_status = DFA_INIT;
+                            skipUseless();
+                        }
+                        break;
+                    case DFA_INTCONST:
+                        if (now >= '0' && now <= '9') {
+                            nowIntConst = nowIntConst + String.valueOf(now);
+                            moveCol();
+                        } else { //No move!
+                            tokenTo.addToken(new Token("INTCON", curLine, nowIntConst));
+                            nowIntConst = null;
+                            dfa_status = DFA_INIT;
+                            skipUseless();
+                        }
+                        break;
+                    case DFA_FORMATSTRING:
+                        if (now != '\"') {
+                            nowFormatString = nowFormatString + String.valueOf(now);
+                            moveCol();
+                        } else {
+                            nowFormatString = nowFormatString + String.valueOf(now);
+                            tokenTo.addToken(new Token("STRCON", curLine, nowFormatString));
+                            nowFormatString = null;
+                            dfa_status = DFA_INIT;
+                            moveCol();
+                        }
+                        break;
+                    default:
                 }
             }
         }
