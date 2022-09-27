@@ -1,5 +1,8 @@
 import Frontend.InputHandler;
 import Frontend.Lexer.SrcReader;
+import Frontend.Lexer.TokenOutput;
+import Frontend.OutputHandler;
+import Frontend.Syntax.Parser.CompUnitParser;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,6 +21,9 @@ public class Compiler {
         SrcReader sr = new SrcReader();
         InputHandler input = new InputHandler(testfile, sr);
         sr.analysis();
-        sr.output();
+        CompUnitParser compUnitParser = new CompUnitParser();
+        compUnitParser.Analyzer();
+        compUnitParser.getResult().output();
+        OutputHandler.endOutput();
     }
 }

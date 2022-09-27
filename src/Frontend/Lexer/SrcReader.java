@@ -6,7 +6,6 @@ import java.util.Map;
 
 public class SrcReader {
     private ArrayList<String> contents;
-    private TokenOutput tokenTo;
     private int curLine;
     private int curColumn;
     private int status;
@@ -24,7 +23,6 @@ public class SrcReader {
 
     public SrcReader() {
         contents = new ArrayList<>();
-        tokenTo = new TokenOutput();
         curLine = 0;
         curColumn = 0;
         status = NORMAL;
@@ -65,10 +63,6 @@ public class SrcReader {
         return ' ';
     }
 
-    public void skipMultiComments() {
-
-    }
-
     public void skipUseless() {
         if (isEndOfFile()) {
             return;
@@ -102,7 +96,7 @@ public class SrcReader {
         while (!isEndOfFile()) {
             detectLine();
             now = contents.get(curLine).charAt(curColumn);
-            System.out.println(now + " " + status + " " + dfa_status);
+            // System.out.println(now + " " + status + " " + dfa_status);
             if (status == SINGLECOMMENT) {
                 curLine++;
                 curColumn = 0;
@@ -143,7 +137,7 @@ public class SrcReader {
                                     String tempTwo = now + String.valueOf(tryNext);
                                     for (Map.Entry<String, String> t : Token.DOUBLEOP.entrySet()) {
                                         if (tempTwo.equals(t.getValue())) {
-                                            tokenTo.addToken(new Token(t.getKey(), curLine, tempTwo));
+                                            TokenOutput.addToken(new Token(t.getKey(), curLine, tempTwo));
                                             moveCol();
                                             moveCol();
                                             ismatch = true;
@@ -155,7 +149,7 @@ public class SrcReader {
                                     String tempOne = String.valueOf(now);
                                     for (Map.Entry<String, String> t : Token.SINGLEOP.entrySet()) {
                                         if (tempOne.equals(t.getValue())) {
-                                            tokenTo.addToken(new Token(t.getKey(), curLine, tempOne));
+                                            TokenOutput.addToken(new Token(t.getKey(), curLine, tempOne));
                                             moveCol();
                                             break;
                                         }
@@ -166,7 +160,7 @@ public class SrcReader {
                                 boolean ismatch = false;
                                 for (Map.Entry<String, String> t : Token.SINGLEOP.entrySet()) {
                                     if (tempOne.equals(t.getValue())) {
-                                        tokenTo.addToken(new Token(t.getKey(), curLine, tempOne));
+                                        TokenOutput.addToken(new Token(t.getKey(), curLine, tempOne));
                                         moveCol();
                                         ismatch = true;
                                         break;
@@ -176,7 +170,7 @@ public class SrcReader {
                                     for (Map.Entry<String, String> t : Token.OTHER.entrySet()) {
                                         if (tempOne.equals(t.getValue())) {
                                             // System.out.print("Matched!");
-                                            tokenTo.addToken(new Token(t.getKey(), curLine, tempOne));
+                                            TokenOutput.addToken(new Token(t.getKey(), curLine, tempOne));
                                             moveCol();
                                             // System.out.println(curLine + " " + curColumn);
                                             break;
@@ -195,13 +189,13 @@ public class SrcReader {
                             boolean isreserved = false;
                             for (Map.Entry<String, String> t : Token.RESERVED.entrySet()) {
                                 if (nowIdent.equals(t.getValue())) {
-                                    tokenTo.addToken(new Token(t.getKey(), curLine, nowIdent));
+                                    TokenOutput.addToken(new Token(t.getKey(), curLine, nowIdent));
                                     isreserved = true;
                                     break;
                                 }
                             }
                             if (!isreserved) {
-                                tokenTo.addToken(new Token("IDENFR", curLine, nowIdent));
+                                TokenOutput.addToken(new Token("IDENFR", curLine, nowIdent));
                             }
                             nowIdent = null;
                             dfa_status = DFA_INIT;
@@ -213,7 +207,7 @@ public class SrcReader {
                             nowIntConst = nowIntConst + String.valueOf(now);
                             moveCol();
                         } else { //No move!
-                            tokenTo.addToken(new Token("INTCON", curLine, nowIntConst));
+                            TokenOutput.addToken(new Token("INTCON", curLine, nowIntConst));
                             nowIntConst = null;
                             dfa_status = DFA_INIT;
                             skipUseless();
@@ -225,7 +219,7 @@ public class SrcReader {
                             moveCol();
                         } else {
                             nowFormatString = nowFormatString + String.valueOf(now);
-                            tokenTo.addToken(new Token("STRCON", curLine, nowFormatString));
+                            TokenOutput.addToken(new Token("STRCON", curLine, nowFormatString));
                             nowFormatString = null;
                             dfa_status = DFA_INIT;
                             moveCol();
@@ -239,6 +233,6 @@ public class SrcReader {
 
 
     public void output() throws IOException {
-        tokenTo.output();
+        TokenOutput.output();
     }
 }
