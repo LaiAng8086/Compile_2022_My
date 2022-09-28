@@ -2,6 +2,7 @@ package Frontend.Syntax.Parser;
 
 import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
+import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.ConstDecl;
 
 public class ConstDeclParser implements CommonParser {
@@ -17,23 +18,23 @@ public class ConstDeclParser implements CommonParser {
 
     public void Analyzer() {
         Token fir = TokenOutput.getNowToken();
-        if (fir != null && fir.getType().equals(Token.CONSTTK)) {
+        if (fir != null && fir.getType().equals(Token.CONSTTK)) {   //'const'
             constdecl.addConId(TokenOutput.getIndex());
             TokenOutput.forward();
         }
         fir = TokenOutput.getNowToken();
-        if (fir != null && Token.isBType(fir.getType())) {
+        if (fir != null && Token.isBType(fir.getType())) {  //BType
             constdecl.addBtypeId(TokenOutput.getIndex());
             TokenOutput.forward();
         }
         fir = TokenOutput.getNowToken();
         if (fir != null) {
-            ConstDefParser nowparser = new ConstDefParser();
+            ConstDefParser nowparser = new ConstDefParser();    //ConstDef
             nowparser.Analyzer();
             constdecl.loadFirConstDef(nowparser.getResult());
         }
         fir = TokenOutput.getNowToken();
-        while (!TokenOutput.isEndOfTokens()) {
+        while (!TokenOutput.isEndOfTokens()) {  //{',' ConstDef}
             if (fir == null || !fir.getType().equals(Token.COMMA)) {
                 break;
             }
@@ -44,9 +45,12 @@ public class ConstDeclParser implements CommonParser {
             constdecl.addConstDef(nowparser.getResult());
             fir = TokenOutput.getNowToken();
         }
-        if (fir != null && fir.getType().equals(Token.SEMICN)) {
+        if (fir != null && fir.getType().equals(Token.SEMICN)) {    //';'
             constdecl.addSemicnId(TokenOutput.getIndex());
             TokenOutput.forward();
+        }
+        if (OutputHandler.debug) {
+            System.out.println("ConstDeclParse Finished");
         }
     }
 }

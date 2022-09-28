@@ -2,6 +2,7 @@ package Frontend.Syntax.Parser;
 
 import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
+import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.UnaryExp;
 
 
@@ -60,6 +61,10 @@ public class UnaryExpParser implements CommonParser {
                 primaryexpParser.Analyzer();
                 unaryexp.loadPrimaryExp(primaryexpParser.getResult());
             }
+        }
+        if(OutputHandler.debug) {
+            System.out.println("UnaryExp Finished");
+            System.out.println("Token=" + TokenOutput.getNowToken().getType() + " " + TokenOutput.getIndex());
         }
     }
 }

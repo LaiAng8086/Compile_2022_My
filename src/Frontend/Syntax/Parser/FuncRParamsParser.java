@@ -2,6 +2,7 @@ package Frontend.Syntax.Parser;
 
 import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
+import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.FuncRParams;
 
 public class FuncRParamsParser implements CommonParser {
@@ -18,9 +19,9 @@ public class FuncRParamsParser implements CommonParser {
     public void Analyzer() {
         ExpParser expParser = new ExpParser();
         expParser.Analyzer();
-        funcrparams.loadFirExp(expParser.getResult());
+        funcrparams.loadFirExp(expParser.getResult());  //Exp
         Token now = TokenOutput.getNowToken();
-        while (!TokenOutput.isEndOfTokens()) {
+        while (!TokenOutput.isEndOfTokens()) {  //{',' Exp}
             if (now == null || !now.getType().equals(Token.COMMA)) {
                 break;
             }
@@ -30,6 +31,9 @@ public class FuncRParamsParser implements CommonParser {
             expParser2.Analyzer();
             funcrparams.addExp(expParser2.getResult());
             now = TokenOutput.getNowToken();
+        }
+        if (OutputHandler.debug) {
+            System.out.println("FuncRParams Finished");
         }
     }
 }

@@ -1,15 +1,15 @@
 import Frontend.InputHandler;
 import Frontend.Lexer.SrcReader;
-import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Parser.CompUnitParser;
 
 import java.io.File;
 import java.io.IOException;
 
-public class Compiler {
+public class MyCompiler {
     public static boolean self_test = false;
-    public static String fileName = "testfile17.txt";
+    public static String fileName = "testfile1.txt";
+    // debug switch is in OutputHandler.java
 
     public static void main(String[] args) throws IOException {
         File testfile;

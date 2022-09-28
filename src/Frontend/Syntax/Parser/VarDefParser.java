@@ -2,6 +2,7 @@ package Frontend.Syntax.Parser;
 
 import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
+import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.VarDef;
 
 public class VarDefParser implements CommonParser {
@@ -17,16 +18,17 @@ public class VarDefParser implements CommonParser {
 
     public void Analyzer() {
         Token now = TokenOutput.getNowToken();
-        if (now != null && now.getType().equals(Token.IDENFR)) {
+        if (now != null && now.getType().equals(Token.IDENFR)) {    //Ident
             vardef.loadIdentId(TokenOutput.getIndex());
             TokenOutput.forward();
         }
         now = TokenOutput.getNowToken();
         while (!TokenOutput.isEndOfTokens()) {
-            if (now == null || !now.getType().equals(Token.LBRACK)) {
+            if (now == null || !now.getType().equals(Token.LBRACK)) {  //{'[' ConstExp ']'}
                 break;
             }
             vardef.addLbrack(TokenOutput.getIndex());
+            TokenOutput.forward();
             ConstExpParser constexpParser = new ConstExpParser();
             constexpParser.Analyzer();
             vardef.addConstExp(constexpParser.getResult());
@@ -37,12 +39,15 @@ public class VarDefParser implements CommonParser {
             }
             now = TokenOutput.getNowToken();
         }
-        if (now != null && now.getType().equals(Token.ASSIGN)) {
+        if (now != null && now.getType().equals(Token.ASSIGN)) {    //['=' InitVal]
             vardef.loadAssignId(TokenOutput.getIndex());
             TokenOutput.forward();
             InitValParser initvalParser = new InitValParser();
             initvalParser.Analyzer();
             vardef.loadInitVal(initvalParser.getResult());
+        }
+        if (OutputHandler.debug) {
+            System.out.println("VarDef Finished");
         }
     }
 }

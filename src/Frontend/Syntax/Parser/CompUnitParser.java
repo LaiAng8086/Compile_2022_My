@@ -21,16 +21,16 @@ public class CompUnitParser implements CommonParser {
         Token sec = TokenOutput.getNowToken();
         TokenOutput.forward();
         while (!TokenOutput.isEndOfTokens()) {
-            if (fir.getType().equals(Token.CONSTTK) && sec.getType().equals(Token.INTTK)) {
+            if (fir.getType().equals(Token.CONSTTK) && Token.isBType(sec.getType())) {  //ConstDecl
                 DeclParser nowDeclParser = new DeclParser();
                 TokenOutput.backward();
                 TokenOutput.backward();
                 nowDeclParser.Analyzer();
                 compUnit.addDecl(nowDeclParser.getResult());
-            } else if (fir.getType().equals(Token.INTTK) && sec.getType().equals(Token.IDENFR)) {
+            } else if (Token.isBType(fir.getType()) && sec.getType().equals(Token.IDENFR)) {    //VarDecl?
                 Token third = TokenOutput.getNowToken();
                 TokenOutput.forward();
-                if (!third.getType().equals(Token.LBRACK)) {
+                if (!third.getType().equals(Token.LPARENT)) {
                     DeclParser nowDeclParser = new DeclParser();
                     TokenOutput.backward();
                     TokenOutput.backward();
@@ -57,7 +57,7 @@ public class CompUnitParser implements CommonParser {
         TokenOutput.forward();
         sec = TokenOutput.getNowToken();
         TokenOutput.forward();
-        while (!TokenOutput.isEndOfTokens()) {
+        while (!TokenOutput.isEndOfTokens()) {  //{FuncDef}
             if ((fir.getType().equals(Token.VOIDTK) || fir.getType().equals(Token.INTTK)) &&
                     sec.getType().equals(Token.IDENFR)) {
                 FuncDefParser nowFuncDefParser = new FuncDefParser();
@@ -75,7 +75,7 @@ public class CompUnitParser implements CommonParser {
         }
         TokenOutput.backward();
         TokenOutput.backward();
-        MainFuncDefParser mfdp = new MainFuncDefParser();
+        MainFuncDefParser mfdp = new MainFuncDefParser();   //MainFuncDef
         mfdp.Analyzer();
         compUnit.loadMain(mfdp.getResult());
     }

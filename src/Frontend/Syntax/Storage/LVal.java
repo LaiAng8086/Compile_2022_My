@@ -40,7 +40,9 @@ public class LVal implements MySyntaxTreeNode {
         TokenOutput.outputById(identId);
         if (exps.size() > 0) {
             for (int i = 0; i < exps.size(); i++) {
+                TokenOutput.outputById(lbracks.get(i));
                 exps.get(i).output();
+                TokenOutput.outputById(rbracks.get(i));
             }
         }
         OutputHandler.outALine("<LVal>\n");

@@ -2,6 +2,7 @@ package Frontend.Syntax.Parser;
 
 import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
+import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.Block;
 
 public class BlockParser implements CommonParser {
@@ -17,12 +18,12 @@ public class BlockParser implements CommonParser {
 
     public void Analyzer() {
         Token now = TokenOutput.getNowToken();
-        if (now != null && now.getType().equals(Token.LBRACE)) {
+        if (now != null && now.getType().equals(Token.LBRACE)) {    //'{'
             block.loadLBrace(TokenOutput.getIndex());
             TokenOutput.forward();
         }
         now = TokenOutput.getNowToken();
-        while (!TokenOutput.isEndOfTokens()) {
+        while (!TokenOutput.isEndOfTokens()) {  //{BlockItem}
             if (now == null || now.getType().equals(Token.RBRACE)) {
                 break;
             }
@@ -38,11 +39,13 @@ public class BlockParser implements CommonParser {
             now = TokenOutput.getNowToken();
             // System.out.println(now.getType());
         }
-        if (now != null && now.getType().equals(Token.RBRACE)) {
+        if (now != null && now.getType().equals(Token.RBRACE)) {    //'}'
             block.loadRBrace(TokenOutput.getIndex());
             TokenOutput.forward();
         }
-
+        if (OutputHandler.debug) {
+            System.out.println("BlockParser Completed");
+        }
     }
 
 }

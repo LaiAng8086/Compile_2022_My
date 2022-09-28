@@ -4,6 +4,7 @@ import java.io.*;
 
 public class OutputHandler {
     public static BufferedWriter out;
+    public static boolean debug = false;
 
     static {
         try {

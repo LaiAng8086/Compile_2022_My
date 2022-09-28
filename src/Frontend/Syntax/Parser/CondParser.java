@@ -1,5 +1,7 @@
 package Frontend.Syntax.Parser;
 
+import Frontend.Lexer.TokenOutput;
+import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.Cond;
 
 public class CondParser implements CommonParser {
@@ -17,5 +19,9 @@ public class CondParser implements CommonParser {
         LOrExpParser lorexpParser = new LOrExpParser();
         lorexpParser.Analyzer();
         cond.loadLorExp(lorexpParser.getResult());
+        if(OutputHandler.debug) {
+            System.out.println("Cond Parser Finished");
+            System.out.println("Token=" + TokenOutput.getNowToken());
+        }
     }
 }

@@ -71,6 +71,7 @@ public class InitVal implements MySyntaxTreeNode {
                     initvals.get(i).output();
                 }
             }
+            TokenOutput.outputById(rbraceId);
         }
         OutputHandler.outALine("<InitVal>\n");
     }

@@ -2,6 +2,7 @@ package Frontend.Syntax.Parser;
 
 import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
+import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.MyNumber;
 
 public class NumberParser implements CommonParser {
@@ -15,11 +16,14 @@ public class NumberParser implements CommonParser {
         return number;
     }
 
-    public void Analyzer() {
+    public void Analyzer() {    //IntConst
         Token now = TokenOutput.getNowToken();
         if (now != null && now.getType().equals(Token.INTCON)) {
             number.loadIntCon(TokenOutput.getIndex());
             TokenOutput.forward();
+        }
+        if (OutputHandler.debug) {
+            System.out.println("Number Finished");
         }
     }
 }

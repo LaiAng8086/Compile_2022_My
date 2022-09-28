@@ -59,6 +59,6 @@ public class FuncDef implements MySyntaxTreeNode {
         if (block != null) {
             block.output();
         }
-        OutputHandler.outALine("<Funcdef>\n");
+        OutputHandler.outALine("<FuncDef>\n");
     }
 }

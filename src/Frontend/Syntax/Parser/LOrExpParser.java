@@ -2,6 +2,7 @@ package Frontend.Syntax.Parser;
 
 import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
+import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.LOrExp;
 
 public class LOrExpParser implements CommonParser {
@@ -18,10 +19,10 @@ public class LOrExpParser implements CommonParser {
     public void Analyzer() {
         LAndExpParser landexpParser = new LAndExpParser();
         landexpParser.Analyzer();
-        lorexp.loadFirLAndExp(landexpParser.getResult());
+        lorexp.loadFirLAndExp(landexpParser.getResult());   //LAndExp
         Token now = TokenOutput.getNowToken();
-        while (!TokenOutput.isEndOfTokens()) {
-            if (now == null || now.getType().equals(Token.OR)) {
+        while (!TokenOutput.isEndOfTokens()) {  //{'||' LAndExp}
+            if (now == null || !now.getType().equals(Token.OR)) {
                 break;
             }
             lorexp.addOpera(TokenOutput.getIndex());
@@ -30,6 +31,10 @@ public class LOrExpParser implements CommonParser {
             landexpParser2.Analyzer();
             lorexp.addLAndExp(landexpParser2.getResult());
             now = TokenOutput.getNowToken();
+        }
+        if (OutputHandler.debug) {
+            System.out.println("LOrExp Finished");
+            System.out.println("Token=" + TokenOutput.getNowToken().getType());
         }
     }
 }

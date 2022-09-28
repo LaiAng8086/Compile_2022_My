@@ -2,6 +2,7 @@ package Frontend.Syntax.Parser;
 
 import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
+import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.ConstInitVal;
 
 public class ConstInitValParser implements CommonParser {
@@ -17,12 +18,14 @@ public class ConstInitValParser implements CommonParser {
 
     public void Analyzer() {
         Token now = TokenOutput.getNowToken();
-        if (now != null && !now.getType().equals(Token.LBRACE)) {
+        if (now != null && !now.getType().equals(Token.LBRACE)) {   //ConstExp
+            constinitval.setMode(ConstInitVal.CHOICE1);
             ConstExpParser nowparser = new ConstExpParser();
             nowparser.Analyzer();
             constinitval.loadConstExp(nowparser.getResult());
-        } else if (now != null) {
-            constinitval.loadLbrace(TokenOutput.getIndex());
+        } else if (now != null) {   //'{' [ ConstInitVal { ',' ConstInitVal } ] '}'
+            constinitval.setMode(ConstInitVal.CHOICE2);
+            constinitval.loadLbrace(TokenOutput.getIndex());    //'{'
             TokenOutput.forward();
             now = TokenOutput.getNowToken();
             if (now.getType().equals(Token.RBRACE)) {
@@ -32,7 +35,8 @@ public class ConstInitValParser implements CommonParser {
                 ConstInitValParser nowparser = new ConstInitValParser();
                 nowparser.Analyzer();
                 constinitval.loadfirConstInitVal(nowparser.getResult());
-                while (!TokenOutput.isEndOfTokens()) {
+                now = TokenOutput.getNowToken();
+                while (!TokenOutput.isEndOfTokens()) {  //{ ',' ConstInitVal }
                     if (now == null || !now.getType().equals(Token.COMMA)) {
                         break;
                     }
@@ -48,6 +52,9 @@ public class ConstInitValParser implements CommonParser {
                     TokenOutput.forward();
                 }
             }
+        }
+        if (OutputHandler.debug) {
+            System.out.println("ConstInitVal Finished");
         }
     }
 }

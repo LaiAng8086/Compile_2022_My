@@ -2,6 +2,7 @@ package Frontend.Syntax.Parser;
 
 import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
+import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.ConstDef;
 
 public class ConstDefParser implements CommonParser {
@@ -17,13 +18,13 @@ public class ConstDefParser implements CommonParser {
 
     public void Analyzer() {
         Token fir = TokenOutput.getNowToken();
-        if (fir != null && fir.getType().equals("IDENFR")) {
+        if (fir != null && fir.getType().equals(Token.IDENFR)) {    //Ident
             constdef.loadIdent(TokenOutput.getIndex());
             TokenOutput.forward();
         }
         fir = TokenOutput.getNowToken();
-        while (!TokenOutput.isEndOfTokens()) {
-            if (fir == null || !fir.getType().equals("LBRACK")) {
+        while (!TokenOutput.isEndOfTokens()) {  //{'[' ConstExp ']'}
+            if (fir == null || !fir.getType().equals(Token.LBRACK)) {
                 break;
             }
             constdef.addLbrack(TokenOutput.getIndex());
@@ -32,18 +33,21 @@ public class ConstDefParser implements CommonParser {
             nowparser.Analyzer();
             constdef.addConstExp(nowparser.getResult());
             fir = TokenOutput.getNowToken();
-            if (fir != null && fir.getType().equals("RBRACK")) {
+            if (fir != null && fir.getType().equals(Token.RBRACK)) {
                 constdef.addRbrack(TokenOutput.getIndex());
                 TokenOutput.forward();
             }
             fir = TokenOutput.getNowToken();
         }
-        if (fir != null && fir.getType().equals("ASSIGN")) {
+        if (fir != null && fir.getType().equals(Token.ASSIGN)) {    //'='
             constdef.loadAssign(TokenOutput.getIndex());
             TokenOutput.forward();
         }
-        ConstInitValParser nowparser = new ConstInitValParser();
+        ConstInitValParser nowparser = new ConstInitValParser();    //ConstInitVal
         nowparser.Analyzer();
         constdef.loadConstInitVal(nowparser.getResult());
+        if(OutputHandler.debug) {
+            System.out.println("ConstDef Finished");
+        }
     }
 }

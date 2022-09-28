@@ -2,6 +2,7 @@ package Frontend.Syntax.Parser;
 
 import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
+import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.UnaryOp;
 
 public class UnaryOpParser implements CommonParser {
@@ -21,6 +22,9 @@ public class UnaryOpParser implements CommonParser {
                 || now.getType().equals(Token.MINU) || now.getType().equals(Token.NOT))) {
             unaryop.loadTypeId(TokenOutput.getIndex());
             TokenOutput.forward();
+        }
+        if(OutputHandler.debug) {
+            System.out.println("UnaryOp Finished");
         }
     }
 }

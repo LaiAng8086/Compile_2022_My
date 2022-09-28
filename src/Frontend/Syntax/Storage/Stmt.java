@@ -153,7 +153,7 @@ public class Stmt implements MySyntaxTreeNode, BlockItem {
 
     public void addExp(Exp newn) {//!!!注意區分，这是用在printf里得
         exps.add(newn);
-    }
+    }  //注意区分！
 
     public void output() throws IOException {
         switch (mode) {
@@ -178,10 +178,8 @@ public class Stmt implements MySyntaxTreeNode, BlockItem {
                 TokenOutput.outputById(semicnId);
                 break;
             case EXP:
-                if (exps.size() > 0) {
-                    for (Exp t : exps) {
-                        t.output();
-                    }
+                if (exp != null) {
+                    exp.output();
                 }
                 TokenOutput.outputById(semicnId);
                 break;
