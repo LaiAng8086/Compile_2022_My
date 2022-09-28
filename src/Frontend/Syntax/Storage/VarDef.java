@@ -1,9 +1,7 @@
 package Frontend.Syntax.Storage;
 
-import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
-import com.sun.javafx.image.IntPixelGetter;
 
 import java.io.IOException;
 import java.util.ArrayList;
