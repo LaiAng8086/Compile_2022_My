@@ -6,7 +6,7 @@ import Frontend.Syntax.Parser.CompUnitParser;
 import java.io.File;
 import java.io.IOException;
 
-public class MyCompiler {
+public class Compiler {
     public static boolean self_test = false;
     public static String fileName = "testfile1.txt";
     // debug switch is in OutputHandler.java
