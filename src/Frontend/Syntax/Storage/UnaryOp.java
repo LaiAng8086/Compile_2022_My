@@ -20,6 +20,6 @@ public class UnaryOp implements MySyntaxTreeNode {
         if (typeId != -1) {
             TokenOutput.outputById(typeId);
         }
-        OutputHandler.outALine("<UnaryOp>\n");
+        OutputHandler.outALineWithoutEnter("<UnaryOp>\n");
     }
 }

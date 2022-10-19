@@ -33,18 +33,24 @@ public class MulExp implements MySyntaxTreeNode {
         unaryexps.add(newn);
     }
 
+    //For Error Process
+    public boolean isSingle() {
+        return firunaryexp != null && unaryexps.size() == 0;
+    }
+    //Error Process End
+
     public void output() throws IOException {
         if (firunaryexp != null) {
             firunaryexp.output();
         }
         if (unaryexps.size() > 0) {
             for (int i = 0; i < unaryexps.size(); i++) {
-                OutputHandler.outALine("<MulExp>\n");
+                OutputHandler.outALineWithoutEnter("<MulExp>\n");
                 TokenOutput.outputById(operas.get(i));
                 unaryexps.get(i).output();
             }
 
         }
-        OutputHandler.outALine("<MulExp>\n");
+        OutputHandler.outALineWithoutEnter("<MulExp>\n");
     }
 }

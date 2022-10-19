@@ -5,8 +5,11 @@ import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.AddExp;
 import Frontend.Syntax.Storage.MulExp;
+import SymbolTable.NonFuncTable;
 
-public class AddExpParser implements CommonParser {
+import java.io.IOException;
+
+public class AddExpParser {
     private AddExp addexp;
 
     public AddExpParser() {
@@ -17,9 +20,9 @@ public class AddExpParser implements CommonParser {
         return addexp;
     }
 
-    public void Analyzer() {
+    public void Analyzer(NonFuncTable table) throws IOException {
         MulExpParser mulExpParser = new MulExpParser();
-        mulExpParser.Analyzer();
+        mulExpParser.Analyzer(table);
         addexp.loadFirMulExp(mulExpParser.getResult());  //MulExp
         Token now = TokenOutput.getNowToken();
         while (!TokenOutput.isEndOfTokens()) {  //{('+'/'-') MulExp }
@@ -29,11 +32,11 @@ public class AddExpParser implements CommonParser {
             addexp.addOpera(TokenOutput.getIndex());
             TokenOutput.forward();
             MulExpParser mulexpParser2 = new MulExpParser();
-            mulexpParser2.Analyzer();
+            mulexpParser2.Analyzer(table);
             addexp.addMulExp(mulexpParser2.getResult());
             now = TokenOutput.getNowToken();
         }
-        if(OutputHandler.debug) {
+        if (OutputHandler.debug) {
             System.out.println("AddExpParser Finished");
             System.out.println("Token=" + TokenOutput.getNowToken().getType());
         }

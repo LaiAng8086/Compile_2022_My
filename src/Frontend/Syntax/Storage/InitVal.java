@@ -73,6 +73,6 @@ public class InitVal implements MySyntaxTreeNode {
             }
             TokenOutput.outputById(rbraceId);
         }
-        OutputHandler.outALine("<InitVal>\n");
+        OutputHandler.outALineWithoutEnter("<InitVal>\n");
     }
 }

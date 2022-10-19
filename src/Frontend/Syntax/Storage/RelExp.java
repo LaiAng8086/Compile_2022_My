@@ -35,11 +35,11 @@ public class RelExp implements MySyntaxTreeNode {
         }
         if (addexps.size() > 0) {
             for (int i = 0; i < addexps.size(); i++) {
-                OutputHandler.outALine("<RelExp>\n");
+                OutputHandler.outALineWithoutEnter("<RelExp>\n");
                 TokenOutput.outputById(operas.get(i));
                 addexps.get(i).output();
             }
         }
-        OutputHandler.outALine("<RelExp>\n");
+        OutputHandler.outALineWithoutEnter("<RelExp>\n");
     }
 }

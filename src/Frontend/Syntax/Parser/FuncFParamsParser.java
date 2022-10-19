@@ -4,8 +4,11 @@ import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.FuncFParams;
+import SymbolTable.NonFuncTable;
 
-public class FuncFParamsParser implements CommonParser {
+import java.io.IOException;
+
+public class FuncFParamsParser {
     private FuncFParams funcfparams;
 
     public FuncFParamsParser() {
@@ -16,10 +19,10 @@ public class FuncFParamsParser implements CommonParser {
         return funcfparams;
     }
 
-    public void Analyzer() {
+    public void Analyzer(String funcName, NonFuncTable table) throws IOException {
         Token now = TokenOutput.getNowToken();
         FuncFParamParser nowparser = new FuncFParamParser();    //FuncFParam
-        nowparser.Analyzer();
+        nowparser.Analyzer(funcName, table);
         funcfparams.loadFirFuncFParam(nowparser.getResult());
         now = TokenOutput.getNowToken();
         while (!TokenOutput.isEndOfTokens()) {  //{',' FuncFParam}
@@ -29,7 +32,7 @@ public class FuncFParamsParser implements CommonParser {
             funcfparams.addComma(TokenOutput.getIndex());
             TokenOutput.forward();
             FuncFParamParser nowparser2 = new FuncFParamParser();
-            nowparser2.Analyzer();
+            nowparser2.Analyzer(funcName, table);
             funcfparams.addFuncFParam(nowparser2.getResult());
             now = TokenOutput.getNowToken();
         }

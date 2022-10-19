@@ -3,8 +3,11 @@ package Frontend.Syntax.Parser;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.AddExp;
 import Frontend.Syntax.Storage.Exp;
+import SymbolTable.NonFuncTable;
 
-public class ExpParser implements CommonParser {
+import java.io.IOException;
+
+public class ExpParser {
     private Exp exp;
 
     public ExpParser() {
@@ -15,11 +18,11 @@ public class ExpParser implements CommonParser {
         return exp;
     }
 
-    public void Analyzer() {    //AddExp
+    public void Analyzer(NonFuncTable table) throws IOException {    //AddExp
         AddExpParser addExpParser = new AddExpParser();
-        addExpParser.Analyzer();
+        addExpParser.Analyzer(table);
         exp.loadAddexp(addExpParser.getResult());
-        if(OutputHandler.debug) {
+        if (OutputHandler.debug) {
             System.out.println("Exp Finished");
         }
     }

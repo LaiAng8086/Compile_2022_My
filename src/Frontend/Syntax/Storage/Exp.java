@@ -23,6 +23,6 @@ public class Exp implements MySyntaxTreeNode {
         if (addexp != null) {
             addexp.output();
         }
-        OutputHandler.outALine("<Exp>\n");
+        OutputHandler.outALineWithoutEnter("<Exp>\n");
     }
 }

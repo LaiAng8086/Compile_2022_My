@@ -35,11 +35,11 @@ public class LOrExp implements MySyntaxTreeNode {
         }
         if (landexps.size() > 0) {
             for (int i = 0; i < landexps.size(); i++) {
-                OutputHandler.outALine("<LOrExp>\n");
+                OutputHandler.outALineWithoutEnter("<LOrExp>\n");
                 TokenOutput.outputById(operas.get(i));
                 landexps.get(i).output();
             }
         }
-        OutputHandler.outALine("<LOrExp>\n");
+        OutputHandler.outALineWithoutEnter("<LOrExp>\n");
     }
 }

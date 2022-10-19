@@ -75,6 +75,6 @@ public class ConstInitVal implements MySyntaxTreeNode {
             }
             TokenOutput.outputById(rbraceId);
         }
-        OutputHandler.outALine("<ConstInitVal>\n");
+        OutputHandler.outALineWithoutEnter("<ConstInitVal>\n");
     }
 }

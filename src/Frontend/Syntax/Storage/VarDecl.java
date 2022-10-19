@@ -57,7 +57,7 @@ public class VarDecl implements MySyntaxTreeNode {
             }
         }
         TokenOutput.outputById(semicnId);
-        OutputHandler.outALine("<VarDecl>\n");
+        OutputHandler.outALineWithoutEnter("<VarDecl>\n");
     }
 
 }

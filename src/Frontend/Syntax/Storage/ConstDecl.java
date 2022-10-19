@@ -60,6 +60,6 @@ public class ConstDecl implements MySyntaxTreeNode {
             }
         }
         TokenOutput.outputById(semicnid);
-        OutputHandler.outALine("<ConstDecl>\n");
+        OutputHandler.outALineWithoutEnter("<ConstDecl>\n");
     }
 }

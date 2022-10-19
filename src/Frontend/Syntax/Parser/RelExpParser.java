@@ -4,8 +4,11 @@ import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.RelExp;
+import SymbolTable.NonFuncTable;
 
-public class RelExpParser implements CommonParser {
+import java.io.IOException;
+
+public class RelExpParser {
     private RelExp relexp;
 
     public RelExpParser() {
@@ -16,9 +19,9 @@ public class RelExpParser implements CommonParser {
         return relexp;
     }
 
-    public void Analyzer() {
+    public void Analyzer(NonFuncTable table) throws IOException {
         AddExpParser addexpParser = new AddExpParser();
-        addexpParser.Analyzer();
+        addexpParser.Analyzer(table);
         relexp.loadFirAddExp(addexpParser.getResult()); //AddExp
         Token now = TokenOutput.getNowToken();
         while (!TokenOutput.isEndOfTokens()) {  //{('<' | '>' | '<=' | '>=') AddExp}
@@ -29,7 +32,7 @@ public class RelExpParser implements CommonParser {
             relexp.addOpera(TokenOutput.getIndex());
             TokenOutput.forward();
             AddExpParser addexpParser2 = new AddExpParser();
-            addexpParser2.Analyzer();
+            addexpParser2.Analyzer(table);
             relexp.addAddExp(addexpParser2.getResult());
             now = TokenOutput.getNowToken();
         }

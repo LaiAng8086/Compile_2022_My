@@ -19,6 +19,6 @@ public class Cond implements MySyntaxTreeNode {
         if (lorexp != null) {
             lorexp.output();
         }
-        OutputHandler.outALine("<Cond>\n");
+        OutputHandler.outALineWithoutEnter("<Cond>\n");
     }
 }

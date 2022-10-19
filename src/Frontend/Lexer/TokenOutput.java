@@ -32,6 +32,10 @@ public class TokenOutput {
         return tokens.get(nowIndex);
     }
 
+    public static Token getTokenById(int id) {
+        return tokens.get(id);
+    }
+
     public static void forward() {
         nowIndex++;
     }
@@ -48,6 +52,11 @@ public class TokenOutput {
         for (Token t : tokens) {
             t.output();
         }
-        OutputHandler.endOutput();
+    }
+
+    public static void outputWithLoc() throws IOException {
+        for (Token t : tokens) {
+            t.outputWithLineNum();
+        }
     }
 }

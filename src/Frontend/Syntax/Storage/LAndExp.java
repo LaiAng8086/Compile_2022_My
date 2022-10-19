@@ -35,11 +35,11 @@ public class LAndExp implements MySyntaxTreeNode {
         }
         if (eqexps.size() > 0) {
             for (int i = 0; i < eqexps.size(); i++) {
-                OutputHandler.outALine("<LAndExp>\n");
+                OutputHandler.outALineWithoutEnter("<LAndExp>\n");
                 TokenOutput.outputById(operas.get(i));
                 eqexps.get(i).output();
             }
         }
-        OutputHandler.outALine("<LAndExp>\n");
+        OutputHandler.outALineWithoutEnter("<LAndExp>\n");
     }
 }

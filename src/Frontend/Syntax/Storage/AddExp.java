@@ -33,17 +33,23 @@ public class AddExp implements MySyntaxTreeNode {
         mulexps.add(newn);
     }
 
+    //For Error Process
+    public boolean isSingle() {
+        return firmulexp != null && mulexps.size() == 0;
+    }
+    //Error Process End
+
     public void output() throws IOException {
         if (firmulexp != null) {
             firmulexp.output();
         }
         if (mulexps.size() > 0) {
             for (int i = 0; i < mulexps.size(); i++) {
-                OutputHandler.outALine("<AddExp>\n");
+                OutputHandler.outALineWithoutEnter("<AddExp>\n");
                 TokenOutput.outputById(operas.get(i));
                 mulexps.get(i).output();
             }
         }
-        OutputHandler.outALine("<AddExp>\n");
+        OutputHandler.outALineWithoutEnter("<AddExp>\n");
     }
 }

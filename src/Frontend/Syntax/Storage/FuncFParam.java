@@ -4,7 +4,6 @@ import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 
 import java.io.IOException;
-import java.sql.Array;
 import java.util.ArrayList;
 
 public class FuncFParam implements MySyntaxTreeNode {
@@ -68,6 +67,6 @@ public class FuncFParam implements MySyntaxTreeNode {
                 }
             }
         }
-        OutputHandler.outALine("<FuncFParam>\n");
+        OutputHandler.outALineWithoutEnter("<FuncFParam>\n");
     }
 }

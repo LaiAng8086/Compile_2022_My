@@ -2,6 +2,7 @@ package Frontend.Syntax.Storage;
 
 import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
+import SymbolTable.NonFuncTable;
 
 import java.io.IOException;
 
@@ -12,14 +13,16 @@ public class FuncDef implements MySyntaxTreeNode {
     private int rparentId;
     private FuncFParams funcfparams;
     private Block block;
+    private NonFuncTable table;
 
-    public FuncDef() {
+    public FuncDef(NonFuncTable fa) {
         functype = null;
         identId = -1;
         lparentId = -1;
         rparentId = -1;
         funcfparams = null;
         block = null;
+        table = new NonFuncTable(fa);
     }
 
     public void loadFuncType(FuncType newn) {
@@ -46,6 +49,20 @@ public class FuncDef implements MySyntaxTreeNode {
         block = newn;
     }
 
+    //Error Process
+    public NonFuncTable getTable() {
+        return table;
+    }
+
+    public int getFuncTypeId() {
+        return functype.getTypeId();
+    }
+
+    public Block getBlock() {
+        return block;
+    }
+    //Error Process End
+
     public void output() throws IOException {
         if (functype != null) {
             functype.output();
@@ -59,6 +76,6 @@ public class FuncDef implements MySyntaxTreeNode {
         if (block != null) {
             block.output();
         }
-        OutputHandler.outALine("<FuncDef>\n");
+        OutputHandler.outALineWithoutEnter("<FuncDef>\n");
     }
 }

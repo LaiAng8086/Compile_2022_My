@@ -4,21 +4,24 @@ import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.FuncRParams;
+import SymbolTable.NonFuncTable;
 
-public class FuncRParamsParser implements CommonParser {
+import java.io.IOException;
+
+public class FuncRParamsParser {
     private FuncRParams funcrparams;
 
-    public FuncRParamsParser() {
-        funcrparams = new FuncRParams();
+    public FuncRParamsParser(NonFuncTable table) {
+        funcrparams = new FuncRParams(table);
     }
 
     public FuncRParams getResult() {
         return funcrparams;
     }
 
-    public void Analyzer() {
+    public void Analyzer(NonFuncTable table) throws IOException {
         ExpParser expParser = new ExpParser();
-        expParser.Analyzer();
+        expParser.Analyzer(table);
         funcrparams.loadFirExp(expParser.getResult());  //Exp
         Token now = TokenOutput.getNowToken();
         while (!TokenOutput.isEndOfTokens()) {  //{',' Exp}
@@ -28,7 +31,7 @@ public class FuncRParamsParser implements CommonParser {
             funcrparams.addComma(TokenOutput.getIndex());
             TokenOutput.forward();
             ExpParser expParser2 = new ExpParser();
-            expParser2.Analyzer();
+            expParser2.Analyzer(table);
             funcrparams.addExp(expParser2.getResult());
             now = TokenOutput.getNowToken();
         }

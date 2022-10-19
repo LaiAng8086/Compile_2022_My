@@ -47,6 +47,12 @@ public class VarDef implements MySyntaxTreeNode {
         initval = newn;
     }
 
+    //For Symbol Table
+    public int getDimensions() {
+        return lbracks.size();
+    }
+    //Symbol Table End.
+
     public void output() throws IOException {
         TokenOutput.outputById(identId);
         if (constexps.size() > 0) {
@@ -62,6 +68,6 @@ public class VarDef implements MySyntaxTreeNode {
                 initval.output();
             }
         }
-        OutputHandler.outALine("<VarDef>\n");
+        OutputHandler.outALineWithoutEnter("<VarDef>\n");
     }
 }

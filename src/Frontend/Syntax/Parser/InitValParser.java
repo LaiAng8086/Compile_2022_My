@@ -4,8 +4,11 @@ import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.InitVal;
+import SymbolTable.NonFuncTable;
 
-public class InitValParser implements CommonParser {
+import java.io.IOException;
+
+public class InitValParser {
     private InitVal initval;
 
     public InitValParser() {
@@ -16,7 +19,7 @@ public class InitValParser implements CommonParser {
         return initval;
     }
 
-    public void Analyzer() {
+    public void Analyzer(NonFuncTable table) throws IOException {
         Token now = TokenOutput.getNowToken();
         if (now != null && now.getType().equals(Token.LBRACE)) {    //'{'
             initval.setMode(InitVal.CHOICE2);
@@ -28,7 +31,7 @@ public class InitValParser implements CommonParser {
                 TokenOutput.forward();
             } else {
                 InitValParser nowparser = new InitValParser();  //InitVal
-                nowparser.Analyzer();
+                nowparser.Analyzer(table);
                 initval.loadFirInitVal(nowparser.getResult());
                 now = TokenOutput.getNowToken();
                 while (!TokenOutput.isEndOfTokens()) {  //{',' InitVal}
@@ -38,7 +41,7 @@ public class InitValParser implements CommonParser {
                     initval.addComma(TokenOutput.getIndex());
                     TokenOutput.forward();
                     InitValParser nowparser2 = new InitValParser();
-                    nowparser2.Analyzer();
+                    nowparser2.Analyzer(table);
                     initval.addInitVal(nowparser2.getResult());
                     now = TokenOutput.getNowToken();
                 }
@@ -50,7 +53,7 @@ public class InitValParser implements CommonParser {
         } else if (now != null) {   //Exp
             initval.setMode(InitVal.CHOICE1);
             ExpParser nowparser = new ExpParser();
-            nowparser.Analyzer();
+            nowparser.Analyzer(table);
             initval.loadExp(nowparser.getResult());
         }
         if (OutputHandler.debug) {

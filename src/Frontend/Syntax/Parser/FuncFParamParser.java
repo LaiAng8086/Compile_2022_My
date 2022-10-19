@@ -1,12 +1,17 @@
 package Frontend.Syntax.Parser;
 
+import ErrorProcess.MyErrorCollector;
+import ErrorProcess.MyErrorProcessor;
 import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.ConstExp;
 import Frontend.Syntax.Storage.FuncFParam;
+import SymbolTable.*;
 
-public class FuncFParamParser implements CommonParser {
+import java.io.IOException;
+
+public class FuncFParamParser {
     private FuncFParam funcfparam;
 
     public FuncFParamParser() {
@@ -17,20 +22,32 @@ public class FuncFParamParser implements CommonParser {
         return funcfparam;
     }
 
-    public void Analyzer() {
+    public void Analyzer(String funcName, NonFuncTable table) throws IOException {
         Token now = TokenOutput.getNowToken();
-        if (now != null && Token.isBType(Token.INTTK)) {    //BType
+        if (now != null && Token.isBType(Token.INTTK)) {    //BType?
             funcfparam.loadBType(TokenOutput.getIndex());
             TokenOutput.forward();
         }
         now = TokenOutput.getNowToken();
         if (now != null && now.getType().equals(Token.IDENFR)) {    //Ident
-            funcfparam.loadIdent(TokenOutput.getIndex());
+            //ErrorProcess b
+            if (MyErrorProcessor.checkNameRedefinationNonFunc(table, now.getContent())) {
+                MyErrorCollector.getNameRedefination(now.getLineNum());
+                //ErrorProcess End.
+            } else {
+                //Insert Symbol Table
+                NonFuncTableItem newn = new NonFuncTableItem(now.getContent(), MyBasicType.INT, false, -1);//Ignore the dims there.
+                table.insertItem(now.getContent(), newn);
+                //Insert Symbol Table End.
+                funcfparam.loadIdent(TokenOutput.getIndex());
+            }
             TokenOutput.forward();
         }
         now = TokenOutput.getNowToken();
+        int dimensions = 0; // For Func Table Item
         if (now != null && now.getType().equals(Token.LBRACK)) {    //[ '['']' { '[' ConstExp ']'} ]
             funcfparam.loadLBrack(TokenOutput.getIndex());
+            dimensions++;
             TokenOutput.forward();
             now = TokenOutput.getNowToken();
             if (now != null && now.getType().equals(Token.RBRACK)) {
@@ -41,20 +58,34 @@ public class FuncFParamParser implements CommonParser {
                     if (now == null || !now.getType().equals(Token.LBRACK)) {
                         break;
                     }
+                    dimensions++;
                     funcfparam.addLBrack(TokenOutput.getIndex());
                     TokenOutput.forward();
                     ConstExpParser nowparser = new ConstExpParser();
-                    nowparser.Analyzer();
+                    nowparser.Analyzer(table);
                     funcfparam.addConstExp(nowparser.getResult());
                     now = TokenOutput.getNowToken();
                     if (now != null && now.getType().equals(Token.RBRACK)) {
                         funcfparam.addRBrack(TokenOutput.getIndex());
                         TokenOutput.forward();
+                    } else {
+                        //Error Process k
+                        MyErrorProcessor.dealLackOfRBrack();
+                        //Error Process k End
                     }
                     now = TokenOutput.getNowToken();
                 }
+            } else {
+                //Error Process k
+                MyErrorProcessor.dealLackOfRBrack();
+                //Error Process End
             }
         }
+        //Insert Func Table Item
+        FuncTableItem nowFuncItem = adminTable.globalFunctable.getByName(funcName);
+        nowFuncItem.addParamType(MyBasicType.INT);  //目前仅有此类型，之后可能有扩展
+        nowFuncItem.addParamDimensions(dimensions);
+        //Insert Func Table Item End
         if (OutputHandler.debug) {
             System.out.println("FuncFParam Finished");
         }

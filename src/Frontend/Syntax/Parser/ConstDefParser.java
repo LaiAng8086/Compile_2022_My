@@ -1,11 +1,17 @@
 package Frontend.Syntax.Parser;
 
+import ErrorProcess.MyErrorCollector;
+import ErrorProcess.MyErrorProcessor;
 import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.ConstDef;
+import SymbolTable.NonFuncTable;
+import SymbolTable.NonFuncTableItem;
 
-public class ConstDefParser implements CommonParser {
+import java.io.IOException;
+
+public class ConstDefParser {
     private ConstDef constdef;
 
     public ConstDefParser() {
@@ -16,10 +22,19 @@ public class ConstDefParser implements CommonParser {
         return constdef;
     }
 
-    public void Analyzer() {
+    public void Analyzer(NonFuncTable table, int vartype) throws IOException {
         Token fir = TokenOutput.getNowToken();
+        String varName = "";
         if (fir != null && fir.getType().equals(Token.IDENFR)) {    //Ident
-            constdef.loadIdent(TokenOutput.getIndex());
+            //Error Process b
+            boolean isDuplicate = MyErrorProcessor.checkNameRedefinationNonFunc(table, fir.getContent());
+            if (isDuplicate) {
+                MyErrorCollector.getNameRedefination(fir.getLineNum());
+                //Error Process end.
+            } else {
+                varName = fir.getContent();
+                constdef.loadIdent(TokenOutput.getIndex());
+            }
             TokenOutput.forward();
         }
         fir = TokenOutput.getNowToken();
@@ -30,23 +45,31 @@ public class ConstDefParser implements CommonParser {
             constdef.addLbrack(TokenOutput.getIndex());
             TokenOutput.forward();
             ConstExpParser nowparser = new ConstExpParser();
-            nowparser.Analyzer();
+            nowparser.Analyzer(table);
             constdef.addConstExp(nowparser.getResult());
             fir = TokenOutput.getNowToken();
             if (fir != null && fir.getType().equals(Token.RBRACK)) {
                 constdef.addRbrack(TokenOutput.getIndex());
                 TokenOutput.forward();
+            } else {
+                //Error Process k
+                MyErrorProcessor.dealLackOfRBrack();
+                //Error Process end.
             }
             fir = TokenOutput.getNowToken();
         }
+        //Insert symbol table
+        NonFuncTableItem newn = new NonFuncTableItem(varName, vartype, true, constdef.getDimensions());
+        table.insertItem(varName, newn);
+        //Insert symbol table end.
         if (fir != null && fir.getType().equals(Token.ASSIGN)) {    //'='
             constdef.loadAssign(TokenOutput.getIndex());
             TokenOutput.forward();
         }
         ConstInitValParser nowparser = new ConstInitValParser();    //ConstInitVal
-        nowparser.Analyzer();
+        nowparser.Analyzer(table);
         constdef.loadConstInitVal(nowparser.getResult());
-        if(OutputHandler.debug) {
+        if (OutputHandler.debug) {
             System.out.println("ConstDef Finished");
         }
     }

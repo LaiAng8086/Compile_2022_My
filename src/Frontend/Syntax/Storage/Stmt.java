@@ -5,7 +5,6 @@ import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 
 import java.io.IOException;
-import java.sql.Array;
 import java.util.ArrayList;
 
 public class Stmt implements MySyntaxTreeNode, BlockItem {
@@ -155,6 +154,32 @@ public class Stmt implements MySyntaxTreeNode, BlockItem {
         exps.add(newn);
     }  //注意区分！
 
+    //For Error Process.
+    public Token getFormatString() {
+        return TokenOutput.getTokenById(strconId);
+    }
+
+    public int getPrintfExps() {
+        return exps.size();
+    }
+
+    public Token getPrintfWord() {
+        return TokenOutput.getTokenById(printfId);
+    }
+
+    public int getMode() {
+        return mode;
+    }
+
+    public int getBreakId() {
+        return breakId;
+    }
+
+    public int getContinueId() {
+        return continueId;
+    }
+    //For Error Process end.
+
     public void output() throws IOException {
         switch (mode) {
             case ASSIGN:
@@ -246,6 +271,6 @@ public class Stmt implements MySyntaxTreeNode, BlockItem {
                 break;
             default:
         }
-        OutputHandler.outALine("<Stmt>\n");
+        OutputHandler.outALineWithoutEnter("<Stmt>\n");
     }
 }

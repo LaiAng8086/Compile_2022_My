@@ -4,8 +4,11 @@ import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.MulExp;
+import SymbolTable.NonFuncTable;
 
-public class MulExpParser implements CommonParser {
+import java.io.IOException;
+
+public class MulExpParser {
     private MulExp mulexp;
 
     public MulExpParser() {
@@ -16,9 +19,9 @@ public class MulExpParser implements CommonParser {
         return mulexp;
     }
 
-    public void Analyzer() {
+    public void Analyzer(NonFuncTable table) throws IOException {
         UnaryExpParser unaryexpParser = new UnaryExpParser();
-        unaryexpParser.Analyzer();
+        unaryexpParser.Analyzer(table);
         mulexp.loadFirUnaryExp(unaryexpParser.getResult()); //MulExp
         Token now = TokenOutput.getNowToken();
         while (!TokenOutput.isEndOfTokens()) {  //{('*'|'/'|'%') MulExp}
@@ -29,7 +32,7 @@ public class MulExpParser implements CommonParser {
             mulexp.addOpera(TokenOutput.getIndex());
             TokenOutput.forward();
             UnaryExpParser unaryexpParser2 = new UnaryExpParser();
-            unaryexpParser2.Analyzer();
+            unaryexpParser2.Analyzer(table);
             mulexp.addUnaryExp(unaryexpParser2.getResult());
             now = TokenOutput.getNowToken();
         }

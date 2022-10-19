@@ -43,6 +43,6 @@ public class FuncFParams implements MySyntaxTreeNode {
                 funcfparams.get(i).output();
             }
         }
-        OutputHandler.outALine("<FuncFParams>\n");
+        OutputHandler.outALineWithoutEnter("<FuncFParams>\n");
     }
 }

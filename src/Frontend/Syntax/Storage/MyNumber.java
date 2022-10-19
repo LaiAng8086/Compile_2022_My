@@ -18,6 +18,6 @@ public class MyNumber implements MySyntaxTreeNode {
 
     public void output() throws IOException {
         TokenOutput.outputById(intconId);
-        OutputHandler.outALine("<Number>\n");
+        OutputHandler.outALineWithoutEnter("<Number>\n");
     }
 }

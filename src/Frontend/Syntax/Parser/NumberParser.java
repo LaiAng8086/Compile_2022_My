@@ -5,7 +5,7 @@ import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.MyNumber;
 
-public class NumberParser implements CommonParser {
+public class NumberParser {
     private MyNumber number;
 
     public NumberParser() {

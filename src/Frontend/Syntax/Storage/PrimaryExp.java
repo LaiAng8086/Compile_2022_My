@@ -53,6 +53,12 @@ public class PrimaryExp implements MySyntaxTreeNode {
         number = newn;
     }
 
+    //For Error Process
+    public int getMode() {
+        return mode;
+    }
+
+    //Error Process End
     public void output() throws IOException {
         switch (mode) {
             case EXP:
@@ -74,6 +80,6 @@ public class PrimaryExp implements MySyntaxTreeNode {
                 break;
             default:
         }
-        OutputHandler.outALine("<PrimaryExp>\n");
+        OutputHandler.outALineWithoutEnter("<PrimaryExp>\n");
     }
 }

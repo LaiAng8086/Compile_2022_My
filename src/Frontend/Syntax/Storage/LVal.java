@@ -4,7 +4,6 @@ import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 
 import java.io.IOException;
-import java.sql.Array;
 import java.util.ArrayList;
 
 public class LVal implements MySyntaxTreeNode {
@@ -36,6 +35,16 @@ public class LVal implements MySyntaxTreeNode {
         exps.add(newn);
     }
 
+    //For Error Process
+    public int getIdentId() {
+        return identId;
+    }
+
+    public int getDimensions() {
+        return lbracks.size();
+    }
+
+    //Error Process End
     public void output() throws IOException {
         TokenOutput.outputById(identId);
         if (exps.size() > 0) {
@@ -45,6 +54,6 @@ public class LVal implements MySyntaxTreeNode {
                 TokenOutput.outputById(rbracks.get(i));
             }
         }
-        OutputHandler.outALine("<LVal>\n");
+        OutputHandler.outALineWithoutEnter("<LVal>\n");
     }
 }

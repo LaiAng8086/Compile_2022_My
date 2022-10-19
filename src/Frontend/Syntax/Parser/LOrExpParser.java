@@ -4,8 +4,11 @@ import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.LOrExp;
+import SymbolTable.NonFuncTable;
 
-public class LOrExpParser implements CommonParser {
+import java.io.IOException;
+
+public class LOrExpParser {
     private LOrExp lorexp;
 
     public LOrExpParser() {
@@ -16,9 +19,9 @@ public class LOrExpParser implements CommonParser {
         return lorexp;
     }
 
-    public void Analyzer() {
+    public void Analyzer(NonFuncTable table) throws IOException {
         LAndExpParser landexpParser = new LAndExpParser();
-        landexpParser.Analyzer();
+        landexpParser.Analyzer(table);
         lorexp.loadFirLAndExp(landexpParser.getResult());   //LAndExp
         Token now = TokenOutput.getNowToken();
         while (!TokenOutput.isEndOfTokens()) {  //{'||' LAndExp}
@@ -28,7 +31,7 @@ public class LOrExpParser implements CommonParser {
             lorexp.addOpera(TokenOutput.getIndex());
             TokenOutput.forward();
             LAndExpParser landexpParser2 = new LAndExpParser();
-            landexpParser2.Analyzer();
+            landexpParser2.Analyzer(table);
             lorexp.addLAndExp(landexpParser2.getResult());
             now = TokenOutput.getNowToken();
         }

@@ -3,8 +3,11 @@ package Frontend.Syntax.Parser;
 import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.Cond;
+import SymbolTable.NonFuncTable;
 
-public class CondParser implements CommonParser {
+import java.io.IOException;
+
+public class CondParser {
     private Cond cond;
 
     public CondParser() {
@@ -15,11 +18,11 @@ public class CondParser implements CommonParser {
         return cond;
     }
 
-    public void Analyzer() {
+    public void Analyzer(NonFuncTable table) throws IOException {
         LOrExpParser lorexpParser = new LOrExpParser();
-        lorexpParser.Analyzer();
+        lorexpParser.Analyzer(table);
         cond.loadLorExp(lorexpParser.getResult());
-        if(OutputHandler.debug) {
+        if (OutputHandler.debug) {
             System.out.println("Cond Parser Finished");
             System.out.println("Token=" + TokenOutput.getNowToken());
         }

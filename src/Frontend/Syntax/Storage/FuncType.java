@@ -16,8 +16,14 @@ public class FuncType implements MySyntaxTreeNode {
         typeId = newn;
     }
 
+    //Error Process
+    public int getTypeId() {
+        return typeId;
+    }
+    //Error Process End
+
     public void output() throws IOException {
         TokenOutput.outputById(typeId);
-        OutputHandler.outALine("<FuncType>\n");
+        OutputHandler.outALineWithoutEnter("<FuncType>\n");
     }
 }

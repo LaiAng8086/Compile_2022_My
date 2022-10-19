@@ -3,8 +3,11 @@ package Frontend.Syntax.Parser;
 import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
 import Frontend.Syntax.Storage.CompUnit;
+import SymbolTable.adminTable;
 
-public class CompUnitParser implements CommonParser {
+import java.io.IOException;
+
+public class CompUnitParser {
     private CompUnit compUnit;
 
     public CompUnitParser() {
@@ -15,7 +18,7 @@ public class CompUnitParser implements CommonParser {
         return compUnit;
     }
 
-    public void Analyzer() {  //一旦失败，则尝试的都要放回。
+    public void Analyzer() throws IOException {  //一旦失败，则尝试的都要放回。
         Token fir = TokenOutput.getNowToken();
         TokenOutput.forward();
         Token sec = TokenOutput.getNowToken();
@@ -25,7 +28,7 @@ public class CompUnitParser implements CommonParser {
                 DeclParser nowDeclParser = new DeclParser();
                 TokenOutput.backward();
                 TokenOutput.backward();
-                nowDeclParser.Analyzer();
+                nowDeclParser.Analyzer(adminTable.globalNonFunctable);  //Error Process.
                 compUnit.addDecl(nowDeclParser.getResult());
             } else if (Token.isBType(fir.getType()) && sec.getType().equals(Token.IDENFR)) {    //VarDecl?
                 Token third = TokenOutput.getNowToken();
@@ -35,7 +38,7 @@ public class CompUnitParser implements CommonParser {
                     TokenOutput.backward();
                     TokenOutput.backward();
                     TokenOutput.backward();
-                    nowDeclParser.Analyzer();
+                    nowDeclParser.Analyzer(adminTable.globalNonFunctable);  //Error Process.
                     compUnit.addDecl(nowDeclParser.getResult());
                 } else {
                     TokenOutput.backward();

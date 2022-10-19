@@ -93,6 +93,7 @@ public class SrcReader {
 
     public void analysis() {
         char now;
+        int locStart = 0;
         while (!isEndOfFile()) {
             detectLine();
             now = contents.get(curLine).charAt(curColumn);
@@ -120,14 +121,17 @@ public class SrcReader {
                         if (now == '_' || (now >= 'a' && now <= 'z') || (now >= 'A' && now <= 'Z')) {
                             nowIdent = String.valueOf(now);
                             dfa_status = DFA_IDENT;
+                            locStart = curLine;
                             moveCol();
                         } else if (now >= '0' && now <= '9') {
                             nowIntConst = String.valueOf(now);
                             dfa_status = DFA_INTCONST;
+                            locStart = curLine;
                             moveCol();
                         } else if (now == '\"') {
                             nowFormatString = String.valueOf(now);
                             dfa_status = DFA_FORMATSTRING;
+                            locStart = curLine;
                             moveCol();
                         } else {
                             if (now == '!' || now == '&' || now == '|' || now == '<' || now == '>' || now == '=') {
@@ -189,15 +193,16 @@ public class SrcReader {
                             boolean isreserved = false;
                             for (Map.Entry<String, String> t : Token.RESERVED.entrySet()) {
                                 if (nowIdent.equals(t.getValue())) {
-                                    TokenOutput.addToken(new Token(t.getKey(), curLine, nowIdent));
+                                    TokenOutput.addToken(new Token(t.getKey(), locStart, nowIdent));
                                     isreserved = true;
                                     break;
                                 }
                             }
                             if (!isreserved) {
-                                TokenOutput.addToken(new Token("IDENFR", curLine, nowIdent));
+                                TokenOutput.addToken(new Token("IDENFR", locStart, nowIdent));
                             }
                             nowIdent = null;
+                            locStart = 0;
                             dfa_status = DFA_INIT;
                             skipUseless();
                         }
@@ -207,8 +212,9 @@ public class SrcReader {
                             nowIntConst = nowIntConst + String.valueOf(now);
                             moveCol();
                         } else { //No move!
-                            TokenOutput.addToken(new Token("INTCON", curLine, nowIntConst));
+                            TokenOutput.addToken(new Token("INTCON", locStart, nowIntConst));
                             nowIntConst = null;
+                            locStart = 0;
                             dfa_status = DFA_INIT;
                             skipUseless();
                         }
@@ -219,9 +225,10 @@ public class SrcReader {
                             moveCol();
                         } else {
                             nowFormatString = nowFormatString + String.valueOf(now);
-                            TokenOutput.addToken(new Token("STRCON", curLine, nowFormatString));
+                            TokenOutput.addToken(new Token("STRCON", locStart, nowFormatString));
                             nowFormatString = null;
                             dfa_status = DFA_INIT;
+                            locStart = 0;
                             moveCol();
                         }
                         break;

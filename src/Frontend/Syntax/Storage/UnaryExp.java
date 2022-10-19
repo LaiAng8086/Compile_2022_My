@@ -65,6 +65,16 @@ public class UnaryExp implements MySyntaxTreeNode {
         unaryexp = newn;
     }
 
+    //For Error Process
+    public int getMode() {
+        return mode;
+    }
+
+    public int getIdentId() {
+        return identId;
+    }
+
+    //Error Process End.
     public void output() throws IOException {
         switch (mode) {
             case PRIMARY:
@@ -89,6 +99,6 @@ public class UnaryExp implements MySyntaxTreeNode {
                 }
                 break;
         }
-        OutputHandler.outALine("<UnaryExp>\n");
+        OutputHandler.outALineWithoutEnter("<UnaryExp>\n");
     }
 }

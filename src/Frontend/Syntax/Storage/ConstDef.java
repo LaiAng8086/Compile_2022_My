@@ -1,11 +1,9 @@
 package Frontend.Syntax.Storage;
 
-import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 
 import java.io.IOException;
-import java.sql.Array;
 import java.util.ArrayList;
 
 public class ConstDef implements MySyntaxTreeNode {
@@ -49,6 +47,12 @@ public class ConstDef implements MySyntaxTreeNode {
         constinitval = newn;
     }
 
+    //For Symbol Table
+    public int getDimensions() {
+        return lbrackId.size();
+    }
+
+    //Symbol Table end
     public void output() throws IOException {
         TokenOutput.outputById(identId);
         if (lbrackId.size() > 0) {
@@ -62,6 +66,6 @@ public class ConstDef implements MySyntaxTreeNode {
         if (constinitval != null) {
             constinitval.output();
         }
-        OutputHandler.outALine("<ConstDef>\n");
+        OutputHandler.outALineWithoutEnter("<ConstDef>\n");
     }
 }

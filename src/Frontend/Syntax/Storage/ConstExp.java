@@ -19,6 +19,6 @@ public class ConstExp implements MySyntaxTreeNode {
         if (addexp != null) {
             addexp.output();
         }
-        OutputHandler.outALine("<ConstExp>\n");
+        OutputHandler.outALineWithoutEnter("<ConstExp>\n");
     }
 }

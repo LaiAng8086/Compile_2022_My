@@ -99,8 +99,16 @@ public class Token {
 
     public Token(String type, int loc, String cont) {
         this.type = type;
-        this.loc = loc;
+        this.loc = loc + 1;  //!Line Start with 1, while the array start with 0.
         this.cont = cont;
+    }
+
+    public String getContent() {
+        return cont;
+    }
+
+    public int getLineNum() {
+        return loc;
     }
 
     public String getType() {
@@ -108,8 +116,11 @@ public class Token {
     }
 
     public void output() throws IOException {
-        // System.out.println(type + " " + cont + " " + loc);
-        OutputHandler.outALine(type + " " + cont + "\n");
+        OutputHandler.outALineWithoutEnter(type + " " + cont + "\n");
+    }
+
+    public void outputWithLineNum() throws IOException {
+        OutputHandler.outALineWithoutEnter(type + " " + cont + " " + loc + "\n");
     }
 
 }

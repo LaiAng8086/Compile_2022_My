@@ -5,7 +5,7 @@ import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.UnaryOp;
 
-public class UnaryOpParser implements CommonParser {
+public class UnaryOpParser {
     private UnaryOp unaryop;
 
     public UnaryOpParser() {
@@ -23,7 +23,7 @@ public class UnaryOpParser implements CommonParser {
             unaryop.loadTypeId(TokenOutput.getIndex());
             TokenOutput.forward();
         }
-        if(OutputHandler.debug) {
+        if (OutputHandler.debug) {
             System.out.println("UnaryOp Finished");
         }
     }

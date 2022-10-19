@@ -42,6 +42,6 @@ public class CompUnit implements MySyntaxTreeNode {
         if (main != null) {
             main.output();
         }
-        OutputHandler.outALine("<CompUnit>\n");
+        OutputHandler.outALineWithoutEnter("<CompUnit>\n");
     }
 }

@@ -35,11 +35,11 @@ public class EqExp implements MySyntaxTreeNode {
         }
         if (relexps.size() > 0) {
             for (int i = 0; i < relexps.size(); i++) {
-                OutputHandler.outALine("<EqExp>\n");
+                OutputHandler.outALineWithoutEnter("<EqExp>\n");
                 TokenOutput.outputById(operas.get(i));
                 relexps.get(i).output();
             }
         }
-        OutputHandler.outALine("<EqExp>\n");
+        OutputHandler.outALineWithoutEnter("<EqExp>\n");
     }
 }

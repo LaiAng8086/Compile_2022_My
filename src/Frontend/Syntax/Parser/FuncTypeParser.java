@@ -5,7 +5,7 @@ import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.FuncType;
 
-public class FuncTypeParser implements CommonParser {
+public class FuncTypeParser {
     private FuncType functype;
 
     public FuncTypeParser() {

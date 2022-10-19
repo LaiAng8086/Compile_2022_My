@@ -1,11 +1,17 @@
 package Frontend.Syntax.Parser;
 
+import ErrorProcess.MyErrorCollector;
+import ErrorProcess.MyErrorProcessor;
 import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Storage.VarDef;
+import SymbolTable.NonFuncTable;
+import SymbolTable.NonFuncTableItem;
 
-public class VarDefParser implements CommonParser {
+import java.io.IOException;
+
+public class VarDefParser {
     private VarDef vardef;
 
     public VarDefParser() {
@@ -16,10 +22,20 @@ public class VarDefParser implements CommonParser {
         return vardef;
     }
 
-    public void Analyzer() {
+    public void Analyzer(NonFuncTable table, int vartype) throws IOException {
         Token now = TokenOutput.getNowToken();
+        String varName = "";
         if (now != null && now.getType().equals(Token.IDENFR)) {    //Ident
-            vardef.loadIdentId(TokenOutput.getIndex());
+            boolean isDuplicate = MyErrorProcessor.checkNameRedefinationNonFunc(table, now.getContent());
+            if (isDuplicate) {
+                //Error Process b
+                MyErrorCollector.getNameRedefination(now.getLineNum());
+                //Error Process End.
+            } else {
+                vardef.loadIdentId(TokenOutput.getIndex());
+                varName = now.getContent();
+
+            }
             TokenOutput.forward();
         }
         now = TokenOutput.getNowToken();
@@ -30,20 +46,28 @@ public class VarDefParser implements CommonParser {
             vardef.addLbrack(TokenOutput.getIndex());
             TokenOutput.forward();
             ConstExpParser constexpParser = new ConstExpParser();
-            constexpParser.Analyzer();
+            constexpParser.Analyzer(table);
             vardef.addConstExp(constexpParser.getResult());
             now = TokenOutput.getNowToken();
             if (now != null && now.getType().equals(Token.RBRACK)) {
                 vardef.addRbrack(TokenOutput.getIndex());
                 TokenOutput.forward();
+            } else {
+                //Error Process k
+                MyErrorProcessor.dealLackOfRBrack();
+                //Error Process End
             }
             now = TokenOutput.getNowToken();
         }
+        //Insert Symbol Table
+        NonFuncTableItem newn = new NonFuncTableItem(varName, vartype, false, vardef.getDimensions());
+        table.insertItem(varName, newn);
+        //Insert Symbol Table End.
         if (now != null && now.getType().equals(Token.ASSIGN)) {    //['=' InitVal]
             vardef.loadAssignId(TokenOutput.getIndex());
             TokenOutput.forward();
             InitValParser initvalParser = new InitValParser();
-            initvalParser.Analyzer();
+            initvalParser.Analyzer(table);
             vardef.loadInitVal(initvalParser.getResult());
         }
         if (OutputHandler.debug) {
