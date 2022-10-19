@@ -39,7 +39,7 @@ public class NonFuncTable {
                     return t.getValue();
                 }
             }
-            now = this.fa;
+            now = now.fa;
         }
         //Global
         for (Map.Entry<String, NonFuncTableItem> t : adminTable.globalNonFunctable.table.entrySet()) {

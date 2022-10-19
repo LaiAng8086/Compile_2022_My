@@ -25,7 +25,7 @@ public class Compiler {
         sr.analysis();
         CompUnitParser compUnitParser = new CompUnitParser();
         compUnitParser.Analyzer();
-        if (!OutputHandler.isFaultProcess) {
+        if (OutputHandler.syntaxOutput) {
             compUnitParser.getResult().output();
         }
         OutputHandler.endOutput();

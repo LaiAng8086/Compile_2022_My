@@ -6,7 +6,8 @@ public class OutputHandler {
     public static BufferedWriter out;
     public static boolean debug = false;
     public static boolean locDebug = true;
-    public static boolean isFaultProcess = true;
+    public static boolean isFaultProcess = false;
+    public static boolean syntaxOutput = true;
 
     static {
         try {

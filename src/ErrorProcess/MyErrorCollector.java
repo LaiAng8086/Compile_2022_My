@@ -12,7 +12,9 @@ public class MyErrorCollector {
         if (errorLines.contains(lineNumber)) {
             return;
         }
-        OutputHandler.outALineWithEnter(lineNumber + " a");
+        if (OutputHandler.isFaultProcess) {
+            OutputHandler.outALineWithEnter(lineNumber + " a");
+        }
         errorLines.add(lineNumber);
     }
 
@@ -20,7 +22,9 @@ public class MyErrorCollector {
         if (errorLines.contains(lineNumber)) {
             return;
         }
-        OutputHandler.outALineWithEnter(lineNumber + " b");
+        if (OutputHandler.isFaultProcess) {
+            OutputHandler.outALineWithEnter(lineNumber + " b");
+        }
         errorLines.add(lineNumber);
     }
 
@@ -28,7 +32,9 @@ public class MyErrorCollector {
         if (errorLines.contains(lineNumber)) {
             return;
         }
-        OutputHandler.outALineWithEnter(lineNumber + " c");
+        if (OutputHandler.isFaultProcess) {
+            OutputHandler.outALineWithEnter(lineNumber + " c");
+        }
         errorLines.add(lineNumber);
     }
 
@@ -37,7 +43,9 @@ public class MyErrorCollector {
         if (errorLines.contains(lineNumber)) {
             return;
         }
-        OutputHandler.outALineWithEnter(lineNumber + " d");
+        if (OutputHandler.isFaultProcess) {
+            OutputHandler.outALineWithEnter(lineNumber + " d");
+        }
         errorLines.add(lineNumber);
     }
 
@@ -45,7 +53,9 @@ public class MyErrorCollector {
         if (errorLines.contains(lineNumber)) {
             return;
         }
-        OutputHandler.outALineWithEnter(lineNumber + " e");
+        if (OutputHandler.isFaultProcess) {
+            OutputHandler.outALineWithEnter(lineNumber + " e");
+        }
         errorLines.add(lineNumber);
     }
 
@@ -53,7 +63,9 @@ public class MyErrorCollector {
         if (errorLines.contains(lineNumber)) {
             return;
         }
-        OutputHandler.outALineWithEnter(lineNumber + " f");
+        if (OutputHandler.isFaultProcess) {
+            OutputHandler.outALineWithEnter(lineNumber + " f");
+        }
         errorLines.add(lineNumber);
     }
 
@@ -61,7 +73,9 @@ public class MyErrorCollector {
         if (errorLines.contains(lineNumber)) {
             return;
         }
-        OutputHandler.outALineWithEnter(lineNumber + " g");
+        if (OutputHandler.isFaultProcess) {
+            OutputHandler.outALineWithEnter(lineNumber + " g");
+        }
         errorLines.add(lineNumber);
     }
 
@@ -69,7 +83,9 @@ public class MyErrorCollector {
         if (errorLines.contains(lineNumber)) {
             return;
         }
-        OutputHandler.outALineWithEnter(lineNumber + " h");
+        if (OutputHandler.isFaultProcess) {
+            OutputHandler.outALineWithEnter(lineNumber + " h");
+        }
         errorLines.add(lineNumber);
     }
 
@@ -77,7 +93,9 @@ public class MyErrorCollector {
         if (errorLines.contains(lineNumber)) {
             return;
         }
-        OutputHandler.outALineWithEnter(lineNumber + " i");
+        if (OutputHandler.isFaultProcess) {
+            OutputHandler.outALineWithEnter(lineNumber + " i");
+        }
         errorLines.add(lineNumber);
     }
 
@@ -85,7 +103,9 @@ public class MyErrorCollector {
         if (errorLines.contains(lineNumber)) {
             return;
         }
-        OutputHandler.outALineWithEnter(lineNumber + " j");
+        if (OutputHandler.isFaultProcess) {
+            OutputHandler.outALineWithEnter(lineNumber + " j");
+        }
         errorLines.add(lineNumber);
     }
 
@@ -93,7 +113,9 @@ public class MyErrorCollector {
         if (errorLines.contains(lineNumber)) {
             return;
         }
-        OutputHandler.outALineWithEnter(lineNumber + " k");
+        if (OutputHandler.isFaultProcess) {
+            OutputHandler.outALineWithEnter(lineNumber + " k");
+        }
         errorLines.add(lineNumber);
     }
 
@@ -101,7 +123,9 @@ public class MyErrorCollector {
         if (errorLines.contains(lineNumber)) {
             return;
         }
-        OutputHandler.outALineWithEnter(lineNumber + " l");
+        if (OutputHandler.isFaultProcess) {
+            OutputHandler.outALineWithEnter(lineNumber + " l");
+        }
         errorLines.add(lineNumber);
     }
 
@@ -109,7 +133,9 @@ public class MyErrorCollector {
         if (errorLines.contains(lineNumber)) {
             return;
         }
-        OutputHandler.outALineWithEnter(lineNumber + " m");
+        if (OutputHandler.isFaultProcess) {
+            OutputHandler.outALineWithEnter(lineNumber + " m");
+        }
         errorLines.add(lineNumber);
     }
 }
