@@ -31,47 +31,58 @@ public class FuncRParams implements MySyntaxTreeNode {
         return null;
     }
 
+    public void addFuncTableItemFromExp(Exp t, FuncTableItem a) {
+        UnaryExp t1 = getSingleUnaryExp(t);
+        if (t1 != null) {
+            switch (t1.getMode()) {
+                case UnaryExp.PRIMARY:
+                    PrimaryExp t2 = t1.getPrimaryexp();
+                    switch (t2.getMode()) {
+                        case PrimaryExp.EXP:
+                        case PrimaryExp.NUMBER:
+                            a.addParamType(MyBasicType.INT);
+                            a.addParamDimensions(0);
+                            break;
+                        case PrimaryExp.LVAL:
+                            LVal t3 = t2.getLVal();
+                            NonFuncTableItem var = table.getItem(
+                                    TokenOutput.getTokenById(t3.getIdentId()).getContent()
+                            );
+                            if (var != null) {
+                                a.addParamType(var.getBasicType().getType());
+                                a.addParamDimensions(var.getDimensions() - t3.getDimensions());//声明维数-调用时显示维数
+                            }
+                            break;
+                    }
+                    break;
+                case UnaryExp.IDENT:
+                    FuncTableItem func = adminTable.globalFunctable.getByName(
+                            TokenOutput.getTokenById(t1.getIdentId()).getContent()
+                    );
+                    a.addParamType(func.getBasicType().getType());
+                    a.addParamDimensions(0);
+                    break;
+                case UnaryExp.UNARY:
+                    a.addParamType(MyBasicType.INT);
+                    a.addParamDimensions(0);
+                    break;
+            }
+        } else    //If there exists some calculation then the result of a exp should be int.
+        {
+            a.addParamType(MyBasicType.INT);
+            a.addParamDimensions(0);
+
+        }
+    }
+
     public FuncTableItem convertToTableItem() {
         FuncTableItem ret = new FuncTableItem(-1);//Just for parameters, so ignore the return value type.
         if (firexp != null) {
-            UnaryExp t1 = getSingleUnaryExp(firexp);
-            if (t1 != null) {
-                switch (t1.getMode()) {
-                    case UnaryExp.PRIMARY:
-                        PrimaryExp t2 = t1.getPrimaryexp();
-                        switch (t2.getMode()) {
-                            case PrimaryExp.EXP:
-                            case PrimaryExp.NUMBER:
-                                ret.addParamType(MyBasicType.INT);
-                                ret.addParamDimensions(0);
-                                break;
-                            case PrimaryExp.LVAL:
-                                LVal t3 = t2.getLVal();
-                                NonFuncTableItem var = table.getItem(
-                                        TokenOutput.getTokenById(t3.getIdentId()).getContent()
-                                );
-                                ret.addParamType(var.getBasicType().getType());
-                                ret.addParamDimensions(var.getDimensions() - t3.getDimensions());//声明维数-调用时显示维数
-                                break;
-                        }
-                        break;
-                    case UnaryExp.IDENT:
-                        FuncTableItem func = adminTable.globalFunctable.getByName(
-                                TokenOutput.getTokenById(t1.getIdentId()).getContent()
-                        );
-                        ret.addParamType(func.getBasicType().getType());
-                        ret.addParamDimensions(0);
-                        break;
-                    case UnaryExp.UNARY:
-                        ret.addParamType(MyBasicType.INT);
-                        ret.addParamDimensions(0);
-                        break;
-                }
-            } else    //If there exists some calculation then the result of a exp should be int.
-            {
-                ret.addParamType(MyBasicType.INT);
-                ret.addParamDimensions(0);
-
+            addFuncTableItemFromExp(firexp, ret);
+        }
+        if (exps.size() > 0) {
+            for (Exp e : exps) {
+                addFuncTableItemFromExp(e, ret);
             }
         }
         return ret;

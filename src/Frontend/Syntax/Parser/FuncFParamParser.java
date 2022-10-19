@@ -24,6 +24,7 @@ public class FuncFParamParser {
 
     public void Analyzer(String funcName, NonFuncTable table) throws IOException {
         Token now = TokenOutput.getNowToken();
+        String varName = "";
         if (now != null && Token.isBType(Token.INTTK)) {    //BType?
             funcfparam.loadBType(TokenOutput.getIndex());
             TokenOutput.forward();
@@ -35,10 +36,7 @@ public class FuncFParamParser {
                 MyErrorCollector.getNameRedefination(now.getLineNum());
                 //ErrorProcess End.
             } else {
-                //Insert Symbol Table
-                NonFuncTableItem newn = new NonFuncTableItem(now.getContent(), MyBasicType.INT, false, -1);//Ignore the dims there.
-                table.insertItem(now.getContent(), newn);
-                //Insert Symbol Table End.
+                varName = now.getContent();
                 funcfparam.loadIdent(TokenOutput.getIndex());
             }
             TokenOutput.forward();
@@ -86,6 +84,10 @@ public class FuncFParamParser {
         nowFuncItem.addParamType(MyBasicType.INT);  //目前仅有此类型，之后可能有扩展
         nowFuncItem.addParamDimensions(dimensions);
         //Insert Func Table Item End
+        //Insert Var Table
+        NonFuncTableItem newn = new NonFuncTableItem(varName, MyBasicType.INT, false, dimensions);//Ignore the dims there.
+        table.insertItem(varName, newn);
+        //Insert Var End.
         if (OutputHandler.debug) {
             System.out.println("FuncFParam Finished");
         }

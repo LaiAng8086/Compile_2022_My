@@ -4,14 +4,15 @@ import java.io.*;
 
 public class OutputHandler {
     public static BufferedWriter out;
+    public static boolean self_test = false;
     public static boolean debug = false;
     public static boolean locDebug = true;
-    public static boolean isFaultProcess = false;
-    public static boolean syntaxOutput = true;
+    public static boolean isFaultProcess = true;
+    public static boolean syntaxOutput = false;
 
     static {
         try {
-            if (isFaultProcess) {
+            if (isFaultProcess && !self_test) {
                 out = new BufferedWriter(new FileWriter("error.txt"));
             } else {
                 out = new BufferedWriter(new FileWriter("output.txt"));
