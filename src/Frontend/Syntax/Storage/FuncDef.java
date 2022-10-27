@@ -11,7 +11,7 @@ public class FuncDef implements MySyntaxTreeNode {
     private int identId;
     private int lparentId;
     private int rparentId;
-    private FuncFParams funcfparams;
+    public FuncFParams funcfparams;
     private Block block;
     private NonFuncTable table;
 
@@ -62,6 +62,11 @@ public class FuncDef implements MySyntaxTreeNode {
         return block;
     }
     //Error Process End
+
+    public String getFuncName() {
+        return TokenOutput.getTokenById(identId).getContent();
+    }
+
 
     public void output() throws IOException {
         if (functype != null) {

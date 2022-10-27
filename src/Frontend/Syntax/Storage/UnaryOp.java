@@ -16,6 +16,10 @@ public class UnaryOp implements MySyntaxTreeNode {
         typeId = newn;
     }
 
+    public int getTypeId() {
+        return typeId;
+    }
+
     public void output() throws IOException {
         if (typeId != -1) {
             TokenOutput.outputById(typeId);

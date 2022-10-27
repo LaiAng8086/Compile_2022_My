@@ -9,9 +9,9 @@ import java.util.ArrayList;
 public class ConstDecl implements MySyntaxTreeNode {
     private int conid;
     private int btypeid;
-    private ConstDef firconstdef;
+    public ConstDef firconstdef;
     private ArrayList<Integer> commas;
-    private ArrayList<ConstDef> constdefs;
+    public ArrayList<ConstDef> constdefs;
     private int semicnid;
 
     public ConstDecl() {
@@ -45,6 +45,10 @@ public class ConstDecl implements MySyntaxTreeNode {
 
     public void addSemicnId(int newn) {
         semicnid = newn;
+    }
+
+    public String getType() {
+        return TokenOutput.getTokenById(btypeid).getType();
     }
 
     public void output() throws IOException {

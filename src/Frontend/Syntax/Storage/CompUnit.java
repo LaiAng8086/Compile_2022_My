@@ -6,9 +6,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class CompUnit implements MySyntaxTreeNode {
-    private ArrayList<Decl> decls;
-    private ArrayList<FuncDef> funcdefs;
-    private MainFuncDef main;
+    public ArrayList<Decl> decls;
+    public ArrayList<FuncDef> funcdefs;
+    public MainFuncDef main;
 
     public CompUnit() {
         decls = new ArrayList<>();

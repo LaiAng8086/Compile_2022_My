@@ -1,5 +1,6 @@
 package Frontend.Syntax.Storage;
 
+import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 
@@ -14,6 +15,10 @@ public class MyNumber implements MySyntaxTreeNode {
 
     public void loadIntCon(int newn) {
         intconId = newn;
+    }
+
+    public String getNumber() {
+        return TokenOutput.getTokenById(intconId).getContent();
     }
 
     public void output() throws IOException {

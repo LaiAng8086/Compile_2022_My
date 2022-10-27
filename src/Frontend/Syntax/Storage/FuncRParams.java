@@ -8,9 +8,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class FuncRParams implements MySyntaxTreeNode {
-    private Exp firexp;
+    public Exp firexp;
     private ArrayList<Integer> commas;
-    private ArrayList<Exp> exps;
+    public ArrayList<Exp> exps;
     private NonFuncTable table;
 
     public FuncRParams(NonFuncTable tableInvolved) {

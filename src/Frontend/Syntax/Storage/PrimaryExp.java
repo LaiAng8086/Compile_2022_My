@@ -59,6 +59,15 @@ public class PrimaryExp implements MySyntaxTreeNode {
     }
 
     //Error Process End
+
+    public Exp getExp(){
+        return exp;
+    }
+
+    public int getNumber(){
+        return Integer.valueOf(number.getNumber());
+    }
+
     public void output() throws IOException {
         switch (mode) {
             case EXP:

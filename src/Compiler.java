@@ -1,8 +1,9 @@
 import Frontend.InputHandler;
 import Frontend.Lexer.SrcReader;
-import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 import Frontend.Syntax.Parser.CompUnitParser;
+import Frontend.Translator;
+import LLVMIR.Module;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,5 +29,13 @@ public class Compiler {
             compUnitParser.getResult().output();
         }
         OutputHandler.endOutput();
+        if (OutputHandler.stageDebug) {
+            System.out.println("Syntax analysis end.");
+        }
+        Translator trans = new Translator();
+        trans.translateCompUnit(compUnitParser.getResult());
+        if (OutputHandler.LLVMOutput) {
+            Module.getInstance().output();
+        }
     }
 }

@@ -180,6 +180,22 @@ public class Stmt implements MySyntaxTreeNode, BlockItem {
     }
     //For Error Process end.
 
+    public Exp getExp() {
+        return exp;
+    }
+
+    public LVal getLval() {
+        return lval;
+    }
+
+    public Block getBlock() {
+        return block;
+    }
+
+    public Exp getExpById(int index) {
+        return exps.get(index);
+    }
+
     public void output() throws IOException {
         switch (mode) {
             case ASSIGN:

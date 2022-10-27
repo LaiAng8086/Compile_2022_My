@@ -10,9 +10,9 @@ public class VarDef implements MySyntaxTreeNode {
     private int identId;
     private ArrayList<Integer> lbracks;
     private ArrayList<Integer> rbracks;
-    private ArrayList<ConstExp> constexps;
+    public ArrayList<ConstExp> constexps;
     private int assignId;
-    private InitVal initval;
+    public InitVal initval;
 
     public VarDef() {
         identId = -1;
@@ -52,6 +52,10 @@ public class VarDef implements MySyntaxTreeNode {
         return lbracks.size();
     }
     //Symbol Table End.
+
+    public String getName() {
+        return TokenOutput.getTokenById(identId).getContent();
+    }
 
     public void output() throws IOException {
         TokenOutput.outputById(identId);

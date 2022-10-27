@@ -1,5 +1,6 @@
 package Frontend.Syntax.Storage;
 
+import Frontend.Lexer.Token;
 import Frontend.Lexer.TokenOutput;
 import Frontend.OutputHandler;
 
@@ -8,9 +9,9 @@ import java.util.ArrayList;
 
 public class VarDecl implements MySyntaxTreeNode {
     private int btypeId;
-    private VarDef firvardef;
+    public VarDef firvardef;
     private ArrayList<Integer> commas;
-    private ArrayList<VarDef> vardefs;
+    public ArrayList<VarDef> vardefs;
     private int semicnId;
 
     public VarDecl() {
@@ -43,6 +44,10 @@ public class VarDecl implements MySyntaxTreeNode {
 
     public void loadSemicn(int newn) {
         semicnId = newn;
+    }
+
+    public String getType() {
+        return TokenOutput.getTokenById(btypeId).getType();
     }
 
     public void output() throws IOException {

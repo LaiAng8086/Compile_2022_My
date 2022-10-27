@@ -75,6 +75,19 @@ public class UnaryExp implements MySyntaxTreeNode {
     }
 
     //Error Process End.
+
+    public String getUnaryOp() {
+        return TokenOutput.getTokenById(unaryop.getTypeId()).getContent();
+    }
+
+    public UnaryExp getUnaryexp() {
+        return unaryexp;
+    }
+
+    public FuncRParams getFuncrparams() {
+        return funcrparams;
+    }
+
     public void output() throws IOException {
         switch (mode) {
             case PRIMARY:

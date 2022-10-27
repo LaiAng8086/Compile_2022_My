@@ -11,6 +11,10 @@ public class ConstExp implements MySyntaxTreeNode {
         addexp = null;
     }
 
+    public AddExp getAddExp() {
+        return addexp;
+    }
+
     public void loadAddExp(AddExp newn) {
         addexp = newn;
     }

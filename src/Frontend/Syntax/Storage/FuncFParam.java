@@ -9,9 +9,9 @@ import java.util.ArrayList;
 public class FuncFParam implements MySyntaxTreeNode {
     private int btypeId;
     private int identId;
-    private int lbrackId;
+    public int lbrackId;
     private int rbrackId;
-    private ArrayList<Integer> lbracks;
+    public ArrayList<Integer> lbracks;
     private ArrayList<Integer> rbracks;
     private ArrayList<ConstExp> constexps;
 
@@ -51,6 +51,14 @@ public class FuncFParam implements MySyntaxTreeNode {
 
     public void addConstExp(ConstExp newn) {
         constexps.add(newn);
+    }
+
+    public String getType() {
+        return TokenOutput.getTokenById(btypeId).getType();
+    }
+
+    public String getName() {
+        return TokenOutput.getTokenById(identId).getContent();
     }
 
     public void output() throws IOException {

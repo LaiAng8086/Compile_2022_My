@@ -55,6 +55,14 @@ public class InitVal implements MySyntaxTreeNode {
         initvals.add(newn);
     }
 
+    public int getMode() {
+        return mode;
+    }
+
+    public Exp getExp() {
+        return exp;
+    }
+
     public void output() throws IOException {
         if (mode == CHOICE1) {
             if (exp != null) {

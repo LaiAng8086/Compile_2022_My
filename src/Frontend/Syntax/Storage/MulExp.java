@@ -8,8 +8,8 @@ import java.util.ArrayList;
 
 public class MulExp implements MySyntaxTreeNode {
     private UnaryExp firunaryexp;
-    private ArrayList<Integer> operas;  //* / %
-    private ArrayList<UnaryExp> unaryexps;
+    public ArrayList<Integer> operas;  //* / %
+    public ArrayList<UnaryExp> unaryexps;
 
     public MulExp() {
         firunaryexp = null;

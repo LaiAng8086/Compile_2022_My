@@ -10,7 +10,7 @@ import java.util.ArrayList;
 public class Block implements MySyntaxTreeNode {
     private int lbraceId;
     private int rbraceId;
-    private ArrayList<BlockItem> blockitems;
+    public ArrayList<BlockItem> blockitems;
     private NonFuncTable table;
     private boolean isFuncBlock;
 

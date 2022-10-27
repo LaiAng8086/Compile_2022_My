@@ -10,7 +10,7 @@ public class ConstDef implements MySyntaxTreeNode {
     private int identId;
     private ArrayList<Integer> lbrackId;
     private ArrayList<Integer> rbrackId;
-    private ArrayList<ConstExp> constexps;
+    public ArrayList<ConstExp> constexps;
     private int assignId;
     private ConstInitVal constinitval;
 
@@ -47,12 +47,21 @@ public class ConstDef implements MySyntaxTreeNode {
         constinitval = newn;
     }
 
-    //For Symbol Table
+    //For Error Process
     public int getDimensions() {
         return lbrackId.size();
     }
 
-    //Symbol Table end
+    //Error Process end
+
+    public String getName() {
+        return TokenOutput.getTokenById(identId).getContent();
+    }
+
+    public ConstInitVal getConstinitval() {
+        return constinitval;
+    }
+
     public void output() throws IOException {
         TokenOutput.outputById(identId);
         if (lbrackId.size() > 0) {

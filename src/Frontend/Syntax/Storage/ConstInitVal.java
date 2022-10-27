@@ -59,6 +59,14 @@ public class ConstInitVal implements MySyntaxTreeNode {
         constinitvals.add(newn);
     }
 
+    public int getMode() {
+        return mode;
+    }
+
+    public ConstExp getConstexp() {
+        return constexp;
+    }
+
     public void output() throws IOException {
         if (mode == CHOICE1) {
             constexp.output();
