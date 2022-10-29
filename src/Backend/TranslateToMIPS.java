@@ -366,6 +366,4 @@ public class TranslateToMIPS {
             mips.addInstr(new Jr(GRF.RA));
         }
     }
-
-
 }

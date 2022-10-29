@@ -187,9 +187,9 @@ public class GRF {
         scene = new HashMap<>();
         int curStackSize = mips.getCurStackSize();
         //写回正在使用的寄存器
-        while (!regInUse.isEmpty()) {
+        for (Integer regId : regInUse)    //注意：这个地方并不是真的要放弃寄存器，因为恢复现场后应该还是这样,故不要remove
+        {
             curStackSize += 4;
-            int regId = regInUse.removeFirst();
             mips.addInstr(new StoreWord(regId, -curStackSize, GRF.FP));
             scene.put(regId, curStackSize);
         }

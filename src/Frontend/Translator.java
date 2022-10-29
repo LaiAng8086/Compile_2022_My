@@ -223,6 +223,7 @@ public class Translator {
                 curFunction.addAlloca(varAlloca);
                 if (t.initval != null) {
                     translateInitval(t.initval);
+                    initVal = needLoad(initVal);    //有可能加载的是全局变量的指针
                     StoreInstruction varInit = new StoreInstruction("", new VoidType(), curBB, initVal, varAlloca);
                     curBB.addInstruction(varInit);
                     Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), varAlloca);
@@ -406,7 +407,9 @@ public class Translator {
 
 
     public void translateExp(Exp t) {
-        translateAddExp(t.getAddexp());
+        if (t != null) {            //防备空语句
+            translateAddExp(t.getAddexp());
+        }
     }
 
     private String getOpera(int id) {
