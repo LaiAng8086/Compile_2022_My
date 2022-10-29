@@ -7,6 +7,7 @@ import LLVMIR.Value.Instruction.AllocaInstruction;
 import LLVMIR.Value.User;
 import LLVMIR.Value.Value;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class Function extends User {
@@ -35,6 +36,29 @@ public class Function extends User {
 
     public void addBasicBlock(BasicBlock newn) {
         bblocks.add(newn);
+    }
+
+    public ArrayList<Argument> getArgs() {  //返回形参情况，用于后端函数调用
+        return args;
+    }
+
+    /**
+     * 看在中间代码中调用的形参是第几个
+     *
+     * @param argName
+     * @return
+     */
+    public int findArgIndex(String argName) {
+        for (int i = 0; i < args.size(); i++) {
+            if (args.get(i).getName().equals(argName)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    public ArrayList<BasicBlock> getBblocks() {
+        return bblocks;
     }
 
     public void addAlloca(AllocaInstruction newn) {

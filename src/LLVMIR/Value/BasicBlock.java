@@ -46,6 +46,10 @@ public class BasicBlock extends Value {
         return (Function) belong;
     }
 
+    public LinkedList<AbstractInstruction> getInsList() {
+        return insList;
+    }
+
     @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();

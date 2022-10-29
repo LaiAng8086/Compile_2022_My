@@ -35,9 +35,27 @@ public class GlobalVariable extends User {
         isCon = true;
     }
 
+    public boolean initExists() {
+        return hasInit;
+    }
+
+    public Value getInitval() {
+        return operands.get(0);
+    }
+
     @Override
     public String toString() {
-        return name + " =" + (isCon ? " constant " : " global ") + ((PointerType) type).getPointee()
-                + " " + operands.get(0).getName() + "\n";
+        StringBuilder gir = new StringBuilder();
+        gir.append(name).append(" =").append(isCon ? " constant " : " global ").append(((PointerType) type).getPointee());
+        gir.append(" ");
+        if (hasInit) {
+            if (operands.get(0) instanceof ConstantString) {
+                gir.append(operands.get(0).toString());
+            } else if (operands.get(0) instanceof ConstantInt) {
+                gir.append(((ConstantInt) operands.get(0)).getVal());
+            }
+        }
+        gir.append("\n");
+        return gir.toString();
     }
 }

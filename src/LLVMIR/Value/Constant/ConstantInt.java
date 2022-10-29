@@ -6,7 +6,7 @@ public class ConstantInt extends AbstractConstant {
     private int valint;
 
     public ConstantInt(int constval, int width) {
-        super(String.valueOf(constval), new IntType(width));
+        super(String.valueOf(constval), new IntType(width),4);
         valint = constval;
     }
 

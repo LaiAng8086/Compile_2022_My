@@ -8,7 +8,7 @@ import java.util.ArrayList;
 
 public class ConstantArray extends AbstractConstant {
     public ConstantArray(String name, AbstractType ty, int num) {
-        super(name, new ArrayType(ty,num));
+        super(name, new ArrayType(ty, num), ty.getSize() * num);
 
     }
 }

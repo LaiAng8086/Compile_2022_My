@@ -5,8 +5,15 @@ import LLVMIR.Type.IntType;
 import LLVMIR.Value.User;
 
 public abstract class AbstractConstant extends User {
-    AbstractConstant(String name, AbstractType ty) { //No consider of belong ???
+    private int size;
+
+    AbstractConstant(String name, AbstractType ty, int newsiz) { //No consider of belong ???
         super(name, ty, null);
+        size = newsiz;
+    }
+
+    public int getSize() {
+        return size;
     }
 
     public static AbstractConstant getAllZero(AbstractType t) {

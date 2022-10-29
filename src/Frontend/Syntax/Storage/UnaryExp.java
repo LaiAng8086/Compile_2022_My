@@ -77,7 +77,7 @@ public class UnaryExp implements MySyntaxTreeNode {
     //Error Process End.
 
     public String getUnaryOp() {
-        return TokenOutput.getTokenById(unaryop.getTypeId()).getContent();
+        return TokenOutput.getTokenById(unaryop.getTypeId()).getType();
     }
 
     public UnaryExp getUnaryexp() {

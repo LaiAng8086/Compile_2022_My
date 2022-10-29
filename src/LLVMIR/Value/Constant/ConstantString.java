@@ -8,8 +8,12 @@ public class ConstantString extends AbstractConstant {
     private String forout;
 
     public ConstantString(String name, String content) {
-        super(name, new ArrayType(new IntType(8), content.length()));
+        super(name, new ArrayType(new IntType(8), content.length()), content.length());
         forout = content;
+    }
+
+    public String getContent() {
+        return forout;
     }
 
     @Override

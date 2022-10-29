@@ -17,13 +17,12 @@ public class SimpleGEP extends AbstractInstruction {
     public SimpleGEP(String name, AbstractType type, BasicBlock belong, Value op) {
         super("%l" + name, type, belong);
         operands.add(op);
-        needPtr = new PointerType(op.getType());
     }
 
     @Override
     public String toString() {
-        return name + " = getelementptr inbounds " + getOp1().getType() +
-                ", " + needPtr + " " + getOp1().getName() + ", i32 0, i32 0\n";
+        return name + " = getelementptr inbounds " + ((PointerType) getOp1().getType()).getPointee() +
+                ", " + getOp1().getType() + " " + getOp1().getName() + ", i32 0, i32 0\n";
     }
 
 }

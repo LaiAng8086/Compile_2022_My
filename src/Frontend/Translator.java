@@ -12,6 +12,7 @@ import LLVMIR.Value.BasicBlock;
 import LLVMIR.Value.Constant.*;
 import LLVMIR.Value.Instruction.*;
 import LLVMIR.Value.Value;
+import jdk.nashorn.internal.codegen.CompilerConstants;
 
 import java.util.ArrayList;
 
@@ -21,7 +22,7 @@ public class Translator {
     private Function curFunction;
     private BasicBlock curBB;
     private boolean isTransConst;
-    private AbstractConstant initVal;
+    private Value initVal;
     private Value calcVal;
 
     public Translator() {
@@ -64,6 +65,11 @@ public class Translator {
 
         String funcName = t.getFuncName();
         Function newFunc = new Function(funcName, funcRet, Module.getInstance());
+        //非main函数也要加入符号表，方便起见。将这两步提前，是为了防止递归调用
+        Module.getInstance().symbolTable.getCurrentTable().put(funcName, newFunc);
+
+        Module.getInstance().addFunction(newFunc);
+
         curFunction = newFunc;
 
         Module.getInstance().symbolTable.addTable();
@@ -75,8 +81,10 @@ public class Translator {
         curBB = newBB;
 
         //先要有基本块才能往里插形参的store指令
-        ArrayList<Argument> fparams = translateFuncFParams(t.funcfparams);
-        curFunction.addAllArgs(fparams);
+        if (t.funcfparams != null) {
+            ArrayList<Argument> fparams = translateFuncFParams(t.funcfparams);
+            curFunction.addAllArgs(fparams);
+        }
 
         translateBlock(t.getBlock());
 
@@ -87,10 +95,7 @@ public class Translator {
             lastBB.addInstruction(new RetInstruction("", null, curBB, IRUtil.getVoidValue()));
         }
 
-        //非main函数也要加入符号表，方便起见。
-        Module.getInstance().symbolTable.getCurrentTable().put(funcName, newFunc);
 
-        Module.getInstance().addFunction(newFunc);
     }
 
     public void translateMainFuncDef(MainFuncDef t) {
@@ -173,7 +178,7 @@ public class Translator {
             if (Module.getInstance().symbolTable.getSize() == 1)   //Global Const and const must have constinitval
             {
                 translateConstInitVal(t.getConstinitval());
-                GlobalVariable newG = new GlobalVariable(t.getName(), type, Module.getInstance(), initVal);
+                GlobalVariable newG = new GlobalVariable(t.getName(), type, Module.getInstance(), (ConstantInt) initVal);
                 newG.setConst();
                 Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), initVal);
                 Module.getInstance().addGlobalVariable(newG);
@@ -182,6 +187,7 @@ public class Translator {
                         new PointerType(type), curBB);
                 curFunction.addAlloca(constAlloca);
                 if (t.getConstinitval() != null) {  //? what is the type of a store instruction? It's seems can be ignored.
+                    translateConstInitVal(t.getConstinitval());
                     StoreInstruction constStore = new StoreInstruction("", new VoidType(), curBB, initVal, constAlloca);
                     curBB.addInstruction(constStore);
                     Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), initVal);
@@ -199,13 +205,15 @@ public class Translator {
                 if (t.initval != null) {
                     translateInitval(t.initval);
                     // the pointer conversion will happen in Global Variable Function
-                    GlobalVariable newG = new GlobalVariable(t.getName(), type, Module.getInstance(), initVal);
-                    Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), initVal);
+                    //按照语义约束，全局变量的初始值应当为常数数值
+                    GlobalVariable newG = new GlobalVariable(t.getName(), type, Module.getInstance(), (AbstractConstant) initVal);
+                    Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), newG);
                     Module.getInstance().addGlobalVariable(newG);
                 } else {
+                    //根据语义约束，未显式初始化的全局变量，其元素值均被初始化为0
                     GlobalVariable newG = new GlobalVariable(t.getName(), type,
                             Module.getInstance(), new ConstantInt(0, 32));
-                    Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), new ConstantInt(0, 32));
+                    Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), newG);
                     Module.getInstance().addGlobalVariable(newG);
                 }
             } else    //Local var
@@ -217,11 +225,10 @@ public class Translator {
                     translateInitval(t.initval);
                     StoreInstruction varInit = new StoreInstruction("", new VoidType(), curBB, initVal, varAlloca);
                     curBB.addInstruction(varInit);
-                    Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), initVal);
+                    Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), varAlloca);
                 } else {
-                    StoreInstruction varInit = new StoreInstruction("", new VoidType(), curBB, new ConstantInt(0, 32), varAlloca);
-                    curBB.addInstruction(varInit);
-                    Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), new ConstantInt(0, 32));
+                    //局部变量没有初始化则不用store，只需要alloca，符号表就存alloca的指针
+                    Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), varAlloca);
                 }
             }
         } else {
@@ -243,7 +250,7 @@ public class Translator {
             curFunction.addAlloca(paramAlloca);
             StoreInstruction initSaveParam = new StoreInstruction("", new VoidType(), curBB, ret, paramAlloca);
             curBB.addInstruction(initSaveParam);
-            //此时登录符号表的应当是store后的对象
+            //此时登录符号表的应当是申请的指针指向的内存
             Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), paramAlloca);
             return ret;
         } else {
@@ -290,7 +297,7 @@ public class Translator {
     public void translateAssign(Stmt t) {
         Value left, right;
         translateExp(t.getExp());
-        right = calcVal;
+        right = needLoad(calcVal);
         translateLVal(t.getLval());
         left = calcVal;
         StoreInstruction storeRes = new StoreInstruction("", new VoidType(), curBB, right, left);
@@ -300,13 +307,20 @@ public class Translator {
     public void translateReturn(Stmt t) {
         if (t.getExp() != null) {
             translateExp(t.getExp());
-            RetInstruction ret = new RetInstruction("", new VoidType(), curBB, calcVal);
+            Value retVal = needLoad(calcVal);
+            RetInstruction ret = new RetInstruction("", new VoidType(), curBB, retVal);
+            if (curFunction.getName().equals("@main")) {    //Main函数的返回时直接结束程序
+                ret.setMainRet();
+            }
             curBB.addInstruction(ret);
             curFunction.hasReturn = true;
         } else    //In legal situation, only void function
         {
             if (curFunction.getType() instanceof VoidType) {
                 RetInstruction ret = new RetInstruction("", new VoidType(), curBB, IRUtil.getVoidValue());
+                if (curFunction.getName().equals("@main")) {    //Main函数的返回时直接结束程序，不过理论上来说不会触发这里
+                    ret.setMainRet();
+                }
                 curBB.addInstruction(ret);
                 curFunction.hasReturn = true;
             }
@@ -324,11 +338,15 @@ public class Translator {
 
     private void outputStr(String t) {
         String sp = t;
-        sp = sp.replace("\\n", "\0a");
-        sp = sp + "\\0";
+        sp = sp.replace("\\n", "\n");
+        int strLength = sp.length();
+        sp = sp.replace("\n", "\\0a");
+        sp = sp + "\\00";
+        strLength++;
         GlobalVariable newG = new GlobalVariable("_str_" + Module.getInstance().getStrId(),
-                new PointerType(IRUtil.get1DArrayType(8, sp.length())), Module.getInstance(),
-                new ConstantString("", sp));
+                IRUtil.get1DArrayType(8, strLength), Module.getInstance(),
+                new ConstantString("", "\"" + sp + "\""));
+        newG.setConst();
         Module.getInstance().addGlobalVariable(newG);
         SimpleGEP output = new SimpleGEP(String.valueOf(ctrl.getRegName()), new PointerType(new IntType(8)),
                 curBB, newG);
@@ -340,23 +358,25 @@ public class Translator {
     }
 
     public void translateOutput(Stmt t) {
-        int las = 0;
+        int las = 1;
         int putCnt = 0;
         String format = t.getFormatString().getContent();
-        for (int i = 0; i < format.length(); i++) {
+        for (int i = 1; i < format.length() - 1; i++) {
             if (format.charAt(i) == '%') {
-                String sp = format.substring(las, i - 1);
+                if (las <= i - 1) {
+                    String sp = format.substring(las, i);
+                    outputStr(sp);
+                }
                 las = i + 2;
-                outputStr(sp);
                 translateExp(t.getExpById(putCnt++));
+                Value forOutput = needLoad(calcVal);
                 CallInstruction putInt = new CallInstruction("", Module.putint, curBB,
-                        IRUtil.getOnlyArg(calcVal));
+                        IRUtil.getOnlyArg(forOutput));
                 curBB.addInstruction(putInt);
-                i++;
             }
         }
-        if (las != format.length() - 1) {
-            String sp = format.substring(las, format.length() - 1);
+        if (las <= format.length() - 2) {
+            String sp = format.substring(las, format.length() - 1); //[start,end)
             outputStr(sp);
         }
     }
@@ -364,7 +384,7 @@ public class Translator {
     public void translateConstInitVal(ConstInitVal t) {
         if (t.getMode() == ConstInitVal.CHOICE1) {
             translateConstExp(t.getConstexp());
-            initVal = (ConstantInt) calcVal;
+            initVal = calcVal;
         } else {
             ;//todo:Array case.
         }
@@ -373,7 +393,7 @@ public class Translator {
     public void translateInitval(InitVal t) {
         if (t.getMode() == InitVal.CHOICE1) {
             translateExp(t.getExp());
-            initVal = (ConstantInt) calcVal;
+            initVal = calcVal;
         } else {
             ;//todo:Array Case.
         }
@@ -506,23 +526,28 @@ public class Translator {
             } else {
                 if (t.getUnaryOp().equals("PLUS")) {
                     calcVal = right; //no special process
-                } else if (t.getUnaryexp().equals("MINU")) {
+                } else if (t.getUnaryOp().equals("MINU")) {
                     left = needLoad(left);
                     right = needLoad(right);
                     SubInstruction subRes = new SubInstruction(String.valueOf(ctrl.getRegName()), new IntType(32),
                             curBB, left, right);
                     curBB.addInstruction(subRes);
                     calcVal = subRes;
-                } else if (t.getUnaryexp().equals("NOT")) {
+                } else if (t.getUnaryOp().equals("NOT")) {
                     //todo:Cond case
                 }
             }
         } else if (t.getMode() == UnaryExp.IDENT)    //func call
         {
-            ArrayList<Value> args = translateFuncRParams(t.getFuncrparams());
             String funcName = TokenOutput.getTokenById(t.getIdentId()).getContent();
             Function callee = (Function) Module.getInstance().symbolTable.findGlobalName(funcName);
-            CallInstruction callRes = new CallInstruction(String.valueOf(ctrl.getRegName()), callee, curBB, args);
+            CallInstruction callRes = null;
+            if (t.getFuncrparams() != null) {
+                ArrayList<Value> args = translateFuncRParams(t.getFuncrparams());
+                callRes = new CallInstruction(String.valueOf(ctrl.getRegName()), callee, curBB, args);
+            } else {
+                callRes = new CallInstruction(String.valueOf(ctrl.getRegName()), callee, curBB, null);
+            }
             curBB.addInstruction(callRes);
             calcVal = callRes;
         } else if (t.getMode() == UnaryExp.PRIMARY) {
@@ -534,12 +559,14 @@ public class Translator {
         ArrayList<Value> ret = new ArrayList<>();
         if (t.firexp != null) {
             translateExp(t.firexp);
-            ret.add(calcVal);
+            Value RParam = needLoad(calcVal);
+            ret.add(RParam);
         }
         if (t.exps.size() > 0) {
             for (int i = 0; i < t.exps.size(); i++) {
                 translateExp(t.exps.get(i));
-                ret.add(calcVal);
+                Value RParam = needLoad(calcVal);
+                ret.add(RParam);
             }
         }
         return ret;

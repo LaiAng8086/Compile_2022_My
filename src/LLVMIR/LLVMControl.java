@@ -22,7 +22,7 @@ public class LLVMControl {
     }
 
     public static void outputInit() throws IOException {
-        llvmOut = new BufferedWriter(new FileWriter("llvm_ir.ll"));
+        llvmOut = new BufferedWriter(new FileWriter("llvm_ir.txt"));
     }
 
     public static void outString(String t) throws IOException {

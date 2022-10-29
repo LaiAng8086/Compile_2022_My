@@ -7,10 +7,11 @@ public class OutputHandler {
     public static boolean self_test = false;
     public static boolean debug = false; //提交时记得改为false
     public static boolean locDebug = true;
-    public static boolean isFaultProcess = true;
+    public static boolean isFaultProcess = false;
     public static boolean syntaxOutput = false;
-    public static boolean LLVMOutput = true;
+    public static boolean LLVMOutput = true;    //中间代码导出开关
     public static boolean stageDebug = false;    //提交时记得关闭
+    public static boolean MIPSOutput = true;    //MIPS汇编导出开关
 
     static {
         try {

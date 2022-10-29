@@ -1,3 +1,5 @@
+import Backend.MIPSProgram;
+import Backend.TranslateToMIPS;
 import Frontend.InputHandler;
 import Frontend.Lexer.SrcReader;
 import Frontend.OutputHandler;
@@ -25,6 +27,9 @@ public class Compiler {
         sr.analysis();
         CompUnitParser compUnitParser = new CompUnitParser();
         compUnitParser.Analyzer();
+        if (OutputHandler.isFaultProcess) {
+            return;
+        }
         if (OutputHandler.syntaxOutput) {
             compUnitParser.getResult().output();
         }
@@ -36,6 +41,14 @@ public class Compiler {
         trans.translateCompUnit(compUnitParser.getResult());
         if (OutputHandler.LLVMOutput) {
             Module.getInstance().output();
+        }
+        MIPSProgram mipsOut = new MIPSProgram();
+        TranslateToMIPS getMips = new TranslateToMIPS(mipsOut);
+        getMips.toMIPS();
+        if (OutputHandler.MIPSOutput) {
+            MIPSProgram.outputInit();
+            mipsOut.output();
+            MIPSProgram.endMIPSOut();
         }
     }
 }

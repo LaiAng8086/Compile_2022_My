@@ -33,6 +33,14 @@ public class Module extends Value { //The only purpose of extend Value, is just 
         return constStrs++;
     }
 
+    public ArrayList<Function> getFunctions() {
+        return functions;
+    }
+
+    public ArrayList<GlobalVariable> getGlobalVariables() {
+        return globalVariables;
+    }
+
     public static Module getInstance() {
         return Sinleton;
     }
