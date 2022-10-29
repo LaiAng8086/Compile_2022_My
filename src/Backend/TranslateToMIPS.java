@@ -60,9 +60,7 @@ public class TranslateToMIPS {
 
     private void translateFunction(Function t) {
         mips.addInstr(new Label(t.getName()));
-        if (!t.getName().equals("@main")) {  //main函数不存在这件事
-            mips.addInstr(new Move(GRF.FP, GRF.SP));    //在返回语句时会将恢复SP的原值
-        }
+        mips.addInstr(new Move(GRF.FP, GRF.SP));    //在返回语句时会将恢复SP的原值
         ArrayList<Argument> FArgs = t.getArgs();
         int curStackSize = mips.getCurStackSize();
         for (int i = 0; i < FArgs.size(); i++) {

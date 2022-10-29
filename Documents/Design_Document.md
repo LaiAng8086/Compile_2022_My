@@ -258,5 +258,245 @@ PrimaryExp -> '('Exp')' | LVal | Number
 
 ## 六、代码生成设计
 
+### 代码生成一
+
+本次作业是为了让同学们尽快实现一个完整的编译器，测试程序中仅涉及**常量声明、变量声明、读语句、写语句、赋值语句，加减乘除模除等运算语句、函数定义及调用语句**。
+
+#### 参考的LLVM IR指令
+
+##### instructions
+
+| llvm ir       | usage                                                        | intro                                       |
+| ------------- | ------------------------------------------------------------ | ------------------------------------------- |
+| add           | `<result> = add <ty> <op1>, <op2>`                           | /                                           |
+| sub           | `<result> = sub <ty> <op1>, <op2>`                           | /                                           |
+| mul           | `<result> = mul <ty> <op1>, <op2>`                           | /                                           |
+| sdiv          | `<result> = sdiv <ty> <op1>, <op2>`                          | 有符号除法                                  |
+| icmp          | `<result> = icmp <cond> <ty> <op1>, <op2>`                   | 比较指令                                    |
+| and           | `<result> = and <ty> <op1>, <op2>`                           | 与                                          |
+| or            | `<result> = or <ty> <op1>, <op2>`                            | 或                                          |
+| call          | `<result> = call [ret attrs] <ty> <fnptrval>(<function args>)` | 函数调用                                    |
+| alloca        | `<result> = alloca <type>`                                   | 分配内存                                    |
+| load          | `<result> = load <ty>, <ty>* <pointer>`                      | 读取内存                                    |
+| store         | `store <ty> <value>, <ty>* <pointer>`                        | 写内存                                      |
+| getelementptr | `<result> = getelementptr <ty>, * {, [inrange] <ty> <idx>}*` `<result> = getelementptr inbounds <ty>, <ty>* <ptrval>{, [inrange] <ty> <idx>}*` | 计算目标元素的位置（仅计算）                |
+| phi           | `<result> = phi [fast-math-flags] <ty> [ <val0>, <label0>], ...` |                                             |
+| zext..to      | `<result> = zext <ty> <value> to <ty2>`                      | 类型转换，将 `ty`的`value`的type转换为`ty2` |
+
+##### terminator insts
+
+| llvm ir | usage                                                        | intro                          |
+| ------- | ------------------------------------------------------------ | ------------------------------ |
+| br      | `br i1 <cond>, label <iftrue>, label <iffalse>` `br label <dest>` | 改变控制流                     |
+| ret     | `ret <type> <value>` ,`ret void`                             | 退出当前函数，并返回值（可选） |
+
+> 注：这里的i1是个标签
+
+参考的代码与导出
+
+```c
+int a[2][3]={{1,2,3},{4,5,6}};
+int main()
+{
+    int b = a[0][0]+a[0][1]*a[0][2]+a[1][2]/a[1][0]%a[1][1];
+    return 0;
+}
+```
+
+导出的`llvm`
+
+```c
+@a = dso_local global [2 x [3 x i32]] [[3 x i32] [i32 1, i32 2, i32 3], [3 x i32] [i32 4, i32 5, i32 6]], align 16
+
+; Function Attrs: noinline nounwind optnone uwtable
+define dso_local i32 @main() #0 {
+  %1 = alloca i32, align 4
+  %2 = alloca i32, align 4
+  store i32 0, i32* %1, align 4
+  %3 = load i32, i32* getelementptr inbounds ([2 x [3 x i32]], [2 x [3 x i32]]* @a, i64 0, i64 0, i64 0), align 16
+  %4 = load i32, i32* getelementptr inbounds ([2 x [3 x i32]], [2 x [3 x i32]]* @a, i64 0, i64 0, i64 1), align 4
+  %5 = load i32, i32* getelementptr inbounds ([2 x [3 x i32]], [2 x [3 x i32]]* @a, i64 0, i64 0, i64 2), align 8
+  %6 = mul nsw i32 %4, %5
+  %7 = add nsw i32 %3, %6
+  %8 = load i32, i32* getelementptr inbounds ([2 x [3 x i32]], [2 x [3 x i32]]* @a, i64 0, i64 1, i64 2), align 4
+  %9 = load i32, i32* getelementptr inbounds ([2 x [3 x i32]], [2 x [3 x i32]]* @a, i64 0, i64 1, i64 0), align 4
+  %10 = sdiv i32 %8, %9
+  %11 = load i32, i32* getelementptr inbounds ([2 x [3 x i32]], [2 x [3 x i32]]* @a, i64 0, i64 1, i64 1), align 4
+  %12 = srem i32 %10, %11
+  %13 = add nsw i32 %7, %12
+  store i32 %13, i32* %2, align 4
+  ret i32 0
+}
+```
+
+局部变量的数组赋值
+
+一维数组
+
+```c
+int b[];
+b[6]=112;
+```
+
+对应llvm ir
+
+```c
+%8 = load i32*, i32** %5, align 8
+%9 = getelementptr inbounds i32, i32* %8, i64 6
+store i32 112, i32* %9, align 4
+```
+
+二维数组
+
+```c
+int c[][3];
+c[1][1]=1114;
+```
+
+对应llvm ir
+
+```c
+%10 = load [3 x i32]*, [3 x i32]** %6, align 8 //第一个元素的类型
+%11 = getelementptr inbounds [3 x i32], [3 x i32]* %10, i64 1
+%12 = getelementptr inbounds [3 x i32], [3 x i32]* %11, i64 0, i64 1  //前面这个0是占位的，没用
+store i32 1114, i32* %12, align 4
+```
+
+> 而且这里的特殊点在于，它传过来的形参就是指针。
+
+三维数组
+
+```c
+int z[2][2][3];
+z[1][0][2]=10;
+```
+
+对应llvm ir
+
+```c
+%30 = getelementptr inbounds [2 x [2 x [3 x i32]]], [2 x [2 x [3 x i32]]]* %7, i64 0, i64 1
+%31 = getelementptr inbounds [2 x [3 x i32]], [2 x [3 x i32]]* %30, i64 0, i64 0
+%32 = getelementptr inbounds [3 x i32], [3 x i32]* %31, i64 0, i64 2
+store i32 10, i32* %32, align 8
+```
+
+总结一下，每维一个，一步
+
+最后一步一定是单个元素类型对应到值
+
+全局变量看起来要简单一些。
+
+全局数组的初始化
+
+```c
+const int t[3] = {1, 2, 3};
+const int happy[4][5] = {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}, {11, 12, 13, 14, 15}, {16, 17, 18, 19, 20}};
+```
+
+llvm ir
+
+```c
+@t = dso_local constant [3 x i32] [i32 1, i32 2, i32 3], align 4
+@happy = dso_local constant [4 x [5 x i32]] [[5 x i32] [i32 1, i32 2, i32 3, i32 4, i32 5], [5 x i32] [i32 6, i32 7, i32 8, i32 9, i32 10], [5 x i32] [i32 11, i32 12, i32 13, i32 14, i32 15], [5 x i32] [i32 16, i32 17, i32 18, i32 19, i32 20]], align 16
+```
+
+数组的部分初始化
+
+ex.1
+
+```c
+//c
+int h1[4][5] = {{1, 2, 3, 4, 5}, {6, 7, 8, 9, 10}};
+//llvm ir
+constant [4 x [5 x i32]] [[5 x i32] [i32 1, i32 2, i32 3, i32 4, i32 5], [5 x i32] [i32 6, i32 7, i32 8, i32 9, i32 10], [5 x i32] zeroinitializer, [5 x i32] zeroinitializer]
+```
+
+ex.2
+
+```c
+//c
+int h1[4][5] = {{1, 2, 3, 4, 5},{},{}, {6, 7, 8, 9, 10}};
+//llvm ir
+constant [4 x [5 x i32]] [[5 x i32] [i32 1, i32 2, i32 3, i32 4, i32 5], [5 x i32] zeroinitializer, [5 x i32] zeroinitializer, [5 x i32] [i32 6, i32 7, i32 8, i32 9, i32 10]]
+```
+
+ex.3
+
+```c
+//c
+int tt[7] = {1, 3};
+//llvm ir
+constant [7 x i32] [i32 1, i32 3, i32 0, i32 0, i32 0, i32 0, i32 0]
+```
+
+关于`Pointer Type`的理解
+
+```c
+/**
+     * @param pointeeType 指向的元素类型，可以为ArrayType | IntType | FPType | PointerType（最多二重指针）
+     * int a[10]     -- %1 = alloca [10 * i32] 中的 %1 需要视为指向int [10]的指针，而不是指向int的指针
+     * int b[10][20] -- %2 = alloca [10 * [20 * i32]] 中的 %2 需要视为int [10][20]的指针，而不是指向 int [20]的指针
+     * 这一点与 C 语言不一样
+ */
+```
+
+无返回值的函数，基本块最后一句为
+
+```c
+ret void
+```
+
+关于Value
+
+> One important aspect of LLVM is that there is no distinction between an SSA variable and the operation that produces it. Because of this, any reference to the value produced by an instruction (or the value available as an incoming argument, for example) is represented as a direct pointer to the instance of the class that represents this value. Although this may take some getting used to, it simplifies the representation and makes it easier to manipulate.
+>
+> LLVM 的一个重要方面是 SSA 变量和产生它的操作之间没有区别。 因此，对指令产生的值（例如可用作传入参数的值）的任何引用都表示为指向表示该值的类实例的直接指针。 尽管这可能需要一些时间来适应，但它简化了表示并使其更易于操作。
+
+关于User
+
+> The `User` class is the common base class of all LLVM nodes that may refer to `Value`s. It exposes a list of “Operands” that are all of the `Value`s that the User is referring to. The `User` class itself is a subclass of `Value`.
+>
+> The operands of a `User` point directly to the LLVM `Value` that it refers to. Because LLVM uses Static Single Assignment (SSA) form, there can only be one definition referred to, allowing this direct connection. This connection provides the use-def information in LLVM.
+
+关于GlobalVariable
+
+> Because `GlobalValue`s are memory objects, they are always referred to by their **address**. As such, the [Type](https://www.llvm.org/docs/ProgrammersManual.html#type) of a global is always a pointer to its contents. It is important to remember this when using the `GetElementPtrInst` instruction because this pointer must be dereferenced first. For example, if you have a `GlobalVariable` (a subclass of `GlobalValue)` that is an array of 24 ints, type `[24 x i32]`, then the `GlobalVariable` is a pointer to that array. **Although the address of the first element of this array and the value of the `GlobalVariable` are the same, they have different types.** The `GlobalVariable`’s type is `[24 x i32]`. The first element’s type is `i32.` Because of this, accessing a global value requires you to dereference the pointer with `GetElementPtrInst` first, then its elements can be accessed. This is explained in the [LLVM Language Reference Manual](https://www.llvm.org/docs/LangRef.html#globalvars).
+
+关于Function
+
+> The `Function` class represents a single procedure in LLVM. It is actually one of the more complex classes in the LLVM hierarchy because it must keep track of a large amount of data. The `Function` class keeps track of a list of [BasicBlock](https://www.llvm.org/docs/ProgrammersManual.html#basicblock)s, a list of formal [Argument](https://www.llvm.org/docs/ProgrammersManual.html#argument)s, and a [SymbolTable](https://www.llvm.org/docs/ProgrammersManual.html#symboltable).
+>
+> The list of [BasicBlock](https://www.llvm.org/docs/ProgrammersManual.html#basicblock)s is the most commonly used part of `Function` objects. The list imposes an implicit ordering of the blocks in the function, which indicate how the code will be laid out by the backend. Additionally, the first [BasicBlock](https://www.llvm.org/docs/ProgrammersManual.html#basicblock) is the implicit entry node for the `Function`. It is not legal in LLVM to explicitly branch to this initial block. There are no implicit exit nodes, and in fact there may be multiple exit nodes from a single `Function`. If the [BasicBlock](https://www.llvm.org/docs/ProgrammersManual.html#basicblock) list is empty, this indicates that the `Function` is actually a function declaration: the actual body of the function hasn’t been linked in yet.
+>
+> In addition to a list of [BasicBlock](https://www.llvm.org/docs/ProgrammersManual.html#basicblock)s, the `Function` class also keeps track of the list of formal [Argument](https://www.llvm.org/docs/ProgrammersManual.html#argument)s that the function receives. This container manages the lifetime of the [Argument](https://www.llvm.org/docs/ProgrammersManual.html#argument) nodes, just like the [BasicBlock](https://www.llvm.org/docs/ProgrammersManual.html#basicblock) list does for the [BasicBlock](https://www.llvm.org/docs/ProgrammersManual.html#basicblock)s.
+>
+> The [SymbolTable](https://www.llvm.org/docs/ProgrammersManual.html#symboltable) is a very rarely used LLVM feature that is only used when you have to look up a value by name. Aside from that, the [SymbolTable](https://www.llvm.org/docs/ProgrammersManual.html#symboltable) is used internally to make sure that there are not conflicts between the names of [Instruction](https://www.llvm.org/docs/ProgrammersManual.html#instruction)s, [BasicBlock](https://www.llvm.org/docs/ProgrammersManual.html#basicblock)s, or [Argument](https://www.llvm.org/docs/ProgrammersManual.html#argument)s in the function body.
+>
+> Note that `Function` is a [GlobalValue](https://www.llvm.org/docs/ProgrammersManual.html#globalvalue) and therefore also a [Constant](https://www.llvm.org/docs/ProgrammersManual.html#constant). The value of the function is its address (after linking) which is guaranteed to be constant.
+
+以一段手写的 `.ll` 代码为例
+
+```llvm
+define dso_local i32 @main(){
+    %x0 = add i32 5, 0
+    %x1 = add i32 5, %x0
+    ret i32 %x1
+}
+```
+
+其在内存中的存储形式大概是这样的
+
+- `%x0` 是一个 `Instruction` 实例，它的 `OperandList` 里有两个值，一个是 `Constant` 的实例 `5`，另一个是 `Constant` 的实例 `0`；
+- `%x1` 是一个 `Instruction` 实例，它的 `OperandList` 里有两个值，一个是 `Constant` 的实例 `5`，另一个是 `Instruction` 的实例 `%x0`；
+- `ret` 是一个 `Instruction` 实例，它的 `OperandList` 里有一个值，是 `Instruction` 的实例 `%x0`。
+
+注意对实验中可能用到的类，看看llvm官网的Detailed Description
+
+参考编译大赛PPT
+
+从toString里思考这些类是干啥用的。
+
+通过实验可以发现，全局常量和局部常量在LLVM -O0时都是会定义并分配空间的，只是在存储和运算中会用具体数值代替。
+
 ## 七、代码优化设计
 

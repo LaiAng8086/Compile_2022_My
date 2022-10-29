@@ -208,11 +208,12 @@ public class GRF {
 
     public void loadScene() {
         int curStackSize = mips.getCurStackSize();
-        mips.addInstr(new LoadWord(GRF.RA, 0, GRF.SP));   //先把地址最低的三个恢复了
-        mips.addInstr(new LoadWord(GRF.FP, 4, GRF.SP));
-        mips.addInstr(new LoadWord(GRF.A0, 8, GRF.SP));
+        mips.addInstr(new LoadWord(GRF.RA, -curStackSize, GRF.SP));   //先把地址最低的三个恢复了
+        curStackSize -= 4;
+        mips.addInstr(new LoadWord(GRF.FP, -curStackSize, GRF.SP));
+        curStackSize -= 4;
+        mips.addInstr(new LoadWord(GRF.A0, -curStackSize, GRF.SP));
         //之后可以使用FP的值进行恢复
-        curStackSize -= 12;
         for (Map.Entry<Integer, Integer> q : scene.entrySet()) {
             curStackSize -= 4;
             mips.addInstr(new LoadWord(q.getKey(), -q.getValue(), GRF.FP));
