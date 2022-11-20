@@ -37,10 +37,10 @@ public class IRUtil {
     }
 
 
-    public static int accessArray(ConstantArray obj, ArrayList<Integer> dims) {
+    public static int accessArray(ConstantArray obj, ArrayList<ConstantInt> dims) {
         AbstractConstant locate = obj;
         for (int i = 0; i < dims.size(); i++) {
-            locate = ((ConstantArray) locate).getElementByIndex(dims.get(i));
+            locate = ((ConstantArray) locate).getElementByIndex(dims.get(i).getVal());
         }
         return ((ConstantInt) locate).getVal();
     }

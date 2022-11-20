@@ -9,7 +9,7 @@ import java.util.ArrayList;
 public class ArrayType extends AbstractType {
     private final AbstractType elementType;
     private final int elementNum;
-    private final int size;
+    private int size;
     private ConstantArray constInitVal;
     private User iniVal;
     //注：这些初始值只有源代码中的数组才有效,其他情况不填就是了（默认为空）。
@@ -18,7 +18,10 @@ public class ArrayType extends AbstractType {
     public ArrayType(AbstractType ty, int num) {
         elementType = ty;
         elementNum = num;
-        size = elementNum * elementType.getSize();
+        size = 0;
+        if (elementType != null) {
+            size = elementNum * elementType.getSize();
+        }
         iniVal = null;
     }
 

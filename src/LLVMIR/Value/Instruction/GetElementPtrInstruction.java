@@ -6,6 +6,7 @@ import LLVMIR.Type.PointerType;
 import LLVMIR.Value.BasicBlock;
 import LLVMIR.Value.Value;
 
+import java.io.CharArrayReader;
 import java.util.ArrayList;
 
 public class GetElementPtrInstruction extends AbstractInstruction {
@@ -23,7 +24,11 @@ public class GetElementPtrInstruction extends AbstractInstruction {
     public GetElementPtrInstruction(String name, AbstractType type, BasicBlock ref,
                                     Value op1, ArrayList<Value> inds) {
         super("%l" + name, type, ref);
-        indexs = inds;
+        indexs = new ArrayList<>();
+        //此处需要深拷贝
+        for (Value v : inds) {
+            indexs.add(v);
+        }
         operands.add(op1);
         //对于指针类型，要还原。对于数组类型，要创建其指针类型
         if (op1.getType() instanceof ArrayType) {

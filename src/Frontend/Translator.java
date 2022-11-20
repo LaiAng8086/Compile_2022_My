@@ -13,6 +13,7 @@ import LLVMIR.Value.Constant.*;
 import LLVMIR.Value.Instruction.*;
 import LLVMIR.Value.User;
 import LLVMIR.Value.Value;
+import jdk.nashorn.internal.objects.Global;
 import sun.awt.image.ImageWatched;
 
 import java.util.ArrayList;
@@ -23,23 +24,20 @@ public class Translator {
     private final LLVMControl ctrl;
     private Function curFunction;
     private BasicBlock curBB;
-    private boolean isTransConst;
     private Value initVal;
     private Value calcVal;
     private LinkedList<String> loopStack;
     private LinkedList<ArrayList<BrInstruction>> breaks;
-    private ArrayType curArrType;   //供变量数组初始化用
     private Value curArr;
+    private boolean globalTime;
 
     public Translator() {
         nowIntVal = 0;
         ctrl = new LLVMControl();
         curFunction = null;
         curBB = null;
-        isTransConst = false;
         loopStack = new LinkedList<>();
         breaks = new LinkedList<>();
-        curArrType = null;
         curArr = null;
     }
 
@@ -132,7 +130,6 @@ public class Translator {
         if (t.getType().equals("INTTK")) {
             constVarType = new IntType(32);
         }
-        isTransConst = true;
         if (t.firconstdef != null) {
             translateConstDef(constVarType, t.firconstdef);
         }
@@ -141,7 +138,6 @@ public class Translator {
                 translateConstDef(constVarType, t.constdefs.get(i));
             }
         }
-        isTransConst = false;
     }
 
     public void translateVarDecl(VarDecl t) {
@@ -204,6 +200,7 @@ public class Translator {
                 }
             }
         } else {
+            //注意：常量数组必须保存，因为下标可能是变量
             ArrayList<Integer> dims = new ArrayList<>();
             for (int i = 0; i < t.constexps.size(); i++) {
                 translateConstExp(t.constexps.get(i));
@@ -212,28 +209,34 @@ public class Translator {
             AbstractType arrTy = IRUtil.buildArrayType(type, dims);
             if (Module.getInstance().symbolTable.getSize() == 1)   //  全局数组
             {
+                globalTime = true;
                 translateConstInitVal(t.getConstinitval());
-                GlobalVariable newG = new GlobalVariable(t.getName(), arrTy, Module.getInstance(), (ConstantInt) initVal);
+                GlobalVariable newG = new GlobalVariable(t.getName(), arrTy,
+                        Module.getInstance(), (ConstantArray) initVal, true);
                 newG.setConst();
-                Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), initVal);
+                Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), newG);
                 Module.getInstance().addGlobalVariable(newG);
+                globalTime = false;
             } else    //局部常量数组
             {
-                // AllocaInstruction constAlloca = new AllocaInstruction(String.valueOf(ctrl.getRegName()),
-                //         new PointerType(arrTy), curBB);
-                // curFunction.addAlloca(constAlloca);
-                if (t.getConstinitval() != null) {  //? what is the type of a store instruction? It's seems can be ignored.
+                AllocaInstruction varAlloca = new AllocaInstruction(String.valueOf(ctrl.getRegName()),
+                        arrTy, curBB, true);
+                curFunction.addAlloca(varAlloca);
+                curArr = varAlloca;
+                if (t.getConstinitval() != null) {
                     translateConstInitVal(t.getConstinitval());
-                    // StoreInstruction constStore = new StoreInstruction("", new VoidType(), curBB, initVal, constAlloca);
-                    // curBB.addInstruction(constStore);
-                    //注意：此时的initVal应当是ConstantArray类型，取值需要用函数
-                    Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), initVal);
+                    ArrayList<Value> indexs = new ArrayList<>();
+                    indexs.add(new ConstantInt(0, 32));
+                    initConstArray(varAlloca, (ConstantArray) initVal, indexs);
                 }
+                //局部变量没有初始化则不用store，只需要alloca，符号表就存alloca的指针
+                Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), varAlloca);
             }
         }
     }
 
     public void translateVarDef(AbstractType type, VarDef t) {
+        //单变量情形
         if (t.constexps.size() == 0) {
             if (Module.getInstance().symbolTable.getSize() == 1)   //Global var
             {
@@ -268,20 +271,22 @@ public class Translator {
                 }
             }
         } else {
+            //数组情形
             ArrayList<Integer> dims = new ArrayList<>();
             for (int i = 0; i < t.constexps.size(); i++) {
                 translateConstExp(t.constexps.get(i));
                 dims.add(((ConstantInt) calcVal).getVal());
             }
             ArrayType arrTy = IRUtil.buildArrayType(type, dims);
-            curArrType = arrTy;
             if (Module.getInstance().symbolTable.getSize() == 1)   //Global var
             {
+                globalTime = true;
                 if (t.initval != null) {
                     translateInitValGlobalArray(t.initval);
                     // the pointer conversion will happen in Global Variable Function
                     //按照语义约束，全局变量的初始值应当为常数数值
-                    GlobalVariable newG = new GlobalVariable(t.getName(), arrTy, Module.getInstance(), (AbstractConstant) initVal);
+                    GlobalVariable newG = new GlobalVariable(t.getName(), arrTy,
+                            Module.getInstance(), (AbstractConstant) initVal, true);
                     Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), newG);
                     Module.getInstance().addGlobalVariable(newG);
                 } else {
@@ -291,16 +296,19 @@ public class Translator {
                     Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), newG);
                     Module.getInstance().addGlobalVariable(newG);
                 }
+                globalTime = false;
             } else    //Local var
             {
                 //特殊处理，我们知道是数组指针，但是按原样存
                 AllocaInstruction varAlloca = new AllocaInstruction(String.valueOf(ctrl.getRegName()),
                         arrTy, curBB, true);
                 curFunction.addAlloca(varAlloca);
+                curArr = varAlloca;
                 if (t.initval != null) {
                     translateInitval(t.initval);
                     ArrayList<Value> indexs = new ArrayList<>();
-                    initVarArray(initVal, indexs);
+                    varAlloca.loadOperandsAll(((User) initVal).getOperands());
+                    initVarArray(varAlloca, indexs);
                 }
                 //局部变量没有初始化则不用store，只需要alloca，符号表就存alloca的指针
                 Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), varAlloca);
@@ -777,8 +785,7 @@ public class Translator {
                 container.add((AbstractConstant) initVal);
             }
             int num = 1 + t.initvals.size();
-            AbstractType comTy = new ArrayType(newBaseTy, num);
-            initVal = new ConstantArray("", comTy, num, container);
+            initVal = new ConstantArray("", newBaseTy, num, container);
         }
     }
 
@@ -805,7 +812,7 @@ public class Translator {
     //这里主要是在局部数组初始化时使用
     public void initVarArray(Value t, ArrayList<Value> indexs) {
         if (t.getType() instanceof ArrayType) {
-            ArrayList<Value> eles = ((ArrayType) t.getType()).getIniVal().getOperands();
+            ArrayList<Value> eles = ((User) t).getOperands();
             int nowLength = indexs.size();
             for (int i = 0; i < eles.size(); i++) {
                 indexs.add(new ConstantInt(i, 32));
@@ -814,15 +821,35 @@ public class Translator {
             }
         } else {
             Value ld = needLoad(t);
+            indexs.add(0, new ConstantInt(0, 32));
+            //这种初始化，一定是到i32*
             GetElementPtrInstruction gep = new GetElementPtrInstruction(
-                    String.valueOf(ctrl.getRegName()), curArrType, curBB, curArr, indexs
+                    String.valueOf(ctrl.getRegName()), new PointerType(new IntType(32)), curBB, curArr, indexs
             );
+            indexs.remove(0);
             curBB.addInstruction(gep);
             StoreInstruction varInit = new StoreInstruction("", new VoidType(), curBB, ld, gep);
             curBB.addInstruction(varInit);
         }
     }
 
+    public void initConstArray(Value t, ConstantArray arr, ArrayList<Value> indexs) {
+        int nowLength = indexs.size();
+        for (int i = 0; i < arr.getNums(); i++) {
+            if (arr.getElementByIndex(i) instanceof ConstantArray) {
+                indexs.add(new ConstantInt(i, 32));
+                initConstArray(t, (ConstantArray) arr.getElementByIndex(i), indexs);
+                indexs.remove(nowLength);
+            } else {
+                GetElementPtrInstruction gep = new GetElementPtrInstruction(
+                        String.valueOf(ctrl.getRegName()), new PointerType(new IntType(32)), curBB, curArr, indexs
+                );
+                curBB.addInstruction(gep);
+                StoreInstruction varInit = new StoreInstruction("", new VoidType(), curBB, arr.getElementByIndex(i), gep);
+                curBB.addInstruction(varInit);
+            }
+        }
+    }
 
     public void translateConstExp(ConstExp t) {
         translateAddExp(t.getAddExp());
@@ -1030,6 +1057,15 @@ public class Translator {
         if (def.getType() instanceof IntType)    //single var
         {
             calcVal = def;
+        } else if (def instanceof GlobalVariable && ((GlobalVariable) def).isConst() && globalTime) {
+            //特判：全局数组初始化时允许追踪常量求值
+            ArrayList<ConstantInt> indexs = new ArrayList<>();
+            for (int i = 0; i < t.exps.size(); i++) {
+                translateExp(t.exps.get(i));
+                indexs.add((ConstantInt) calcVal);
+            }
+            calcVal = new ConstantInt(
+                    IRUtil.accessArray((ConstantArray) ((GlobalVariable) def).getInitval(), indexs), 32);
         } else if (def.getType() instanceof ArrayType) {
             //实际应用场景为部分数组传参，故索引第一项有个0
             //对于数组应当得到其指针,每确定一层索引，少一层。因此可以将下标的翻译，和指针的类型分开做
@@ -1042,6 +1078,7 @@ public class Translator {
             indexs.add(new ConstantInt(0, 32));
             for (int i = 0; i < t.exps.size(); i++) {
                 translateExp(t.exps.get(i));
+                calcVal = needLoad(calcVal);
                 indexs.add(calcVal);
             }
             GetElementPtrInstruction gp;
@@ -1086,6 +1123,7 @@ public class Translator {
                  */
                 for (int i = 0; i < t.exps.size(); i++) {
                     translateExp(t.exps.get(i));
+                    calcVal = needLoad(calcVal);
                     indexs.add(calcVal);
                 }
                 if (t.exps.size() < realDims) {
