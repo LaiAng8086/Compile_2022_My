@@ -7,8 +7,9 @@ public class IntType extends AbstractType {
         bits = width;
     }
 
+    //注意：字节编码，直接规定int为4字节
     public int getSize() {
-        return bits;
+        return 4;
     }
 
     public int getBits() {

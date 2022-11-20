@@ -293,8 +293,9 @@ public class Translator {
                 }
             } else    //Local var
             {
+                //特殊处理，我们知道是数组指针，但是按原样存
                 AllocaInstruction varAlloca = new AllocaInstruction(String.valueOf(ctrl.getRegName()),
-                        new PointerType(arrTy), curBB);
+                        arrTy, curBB, true);
                 curFunction.addAlloca(varAlloca);
                 if (t.initval != null) {
                     translateInitval(t.initval);
@@ -343,8 +344,8 @@ public class Translator {
                 ret = new Argument(String.valueOf(ctrl.getRegName()), new PointerType(elemTy), curBB);
                 Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), ret);
             }
+            return ret;
         }
-        return null;
     }
 
     public void translateStmt(Stmt t) {
@@ -976,7 +977,7 @@ public class Translator {
             Function callee = (Function) Module.getInstance().symbolTable.findGlobalName(funcName);
             CallInstruction callRes;
             if (t.getFuncrparams() != null) {
-                ArrayList<Value> args = translateFuncRParams(t.getFuncrparams());
+                ArrayList<Value> args = translateFuncRParams(t.getFuncrparams(), callee);
                 callRes = new CallInstruction(String.valueOf(ctrl.getRegName()), callee, curBB, args);
             } else {
                 callRes = new CallInstruction(String.valueOf(ctrl.getRegName()), callee, curBB, null);
@@ -988,17 +989,25 @@ public class Translator {
         }
     }
 
-    public ArrayList<Value> translateFuncRParams(FuncRParams t) {
+    public ArrayList<Value> translateFuncRParams(FuncRParams t, Function callee) {
         ArrayList<Value> ret = new ArrayList<>();
+        ArrayList<Argument> fargs = callee.getArgs();
+        Value RParam;
         if (t.firexp != null) {
             translateExp(t.firexp);
-            Value RParam = needLoad(calcVal);
+            RParam = calcVal;
+            if (!(fargs.get(0).getType() instanceof PointerType)) {
+                RParam = needLoad(calcVal);   //不一定了，有的时候传的就是指针
+            }
             ret.add(RParam);
         }
         if (t.exps.size() > 0) {
             for (int i = 0; i < t.exps.size(); i++) {
                 translateExp(t.exps.get(i));
-                Value RParam = needLoad(calcVal);
+                RParam = calcVal;
+                if (!(fargs.get(i + 1).getType() instanceof PointerType)) {
+                    RParam = needLoad(calcVal);
+                }
                 ret.add(RParam);
             }
         }
@@ -1024,6 +1033,7 @@ public class Translator {
         } else if (def.getType() instanceof ArrayType) {
             //实际应用场景为部分数组传参，故索引第一项有个0
             //对于数组应当得到其指针,每确定一层索引，少一层。因此可以将下标的翻译，和指针的类型分开做
+            //注意，如果一层都没有，还要补个0
             AbstractType lvalType = def.getType();
             for (int i = 0; i < t.exps.size(); i++) {
                 lvalType = ((ArrayType) lvalType).getElementType();
@@ -1035,15 +1045,16 @@ public class Translator {
                 indexs.add(calcVal);
             }
             GetElementPtrInstruction gp;
-            if (lvalType instanceof ArrayType)   //部分数组传参，取元素类型指针
+            if (lvalType instanceof ArrayType)   //部分数组传参，取元素类型指针，这个过程里还得再多一层索引
             {
+                indexs.add(new ConstantInt(0, 32));
                 gp = new GetElementPtrInstruction(
                         String.valueOf(ctrl.getRegName()), new PointerType(((ArrayType) lvalType).getElementType()),
                         curBB, def, indexs);
-            } else    //直接取元素
+            } else    //直接取元素，这个时候还是得再包一层
             {
                 gp = new GetElementPtrInstruction(
-                        String.valueOf(ctrl.getRegName()), lvalType, curBB, def, indexs);
+                        String.valueOf(ctrl.getRegName()), new PointerType(lvalType), curBB, def, indexs);
             }
             curBB.addInstruction(gp);
             calcVal = gp;
