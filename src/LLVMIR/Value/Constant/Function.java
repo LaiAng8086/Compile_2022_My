@@ -84,6 +84,9 @@ public class Function extends User {
         ret.append("){\n");
         for (int i = 0; i < bblocks.size(); i++)  //默认要求block打出标号
         {
+            if (bblocks.get(i).getInstSize() == 0) {    //可能因为break和continue造成的空块，不用管
+                continue;
+            }
             ret.append(bblocks.get(i));
             if (i != bblocks.size() - 1) {
                 ret.append("\n");

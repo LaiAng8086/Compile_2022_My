@@ -7,9 +7,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class EqExp implements MySyntaxTreeNode {
-    private RelExp firrelexp;
-    private ArrayList<Integer> operas;
-    private ArrayList<RelExp> relexps;
+    public RelExp firrelexp;
+    public ArrayList<Integer> operas;
+    public ArrayList<RelExp> relexps;
 
     public EqExp() {
         firrelexp = null;

@@ -15,6 +15,10 @@ public class Cond implements MySyntaxTreeNode {
         lorexp = newn;
     }
 
+    public LOrExp getLorExp() {
+        return lorexp;
+    }
+
     public void output() throws IOException {
         if (lorexp != null) {
             lorexp.output();

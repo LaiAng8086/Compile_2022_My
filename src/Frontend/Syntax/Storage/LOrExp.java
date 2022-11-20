@@ -7,9 +7,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class LOrExp implements MySyntaxTreeNode {
-    private LAndExp firlandexp;
+    public LAndExp firlandexp;
     private ArrayList<Integer> operas;
-    private ArrayList<LAndExp> landexps;
+    public ArrayList<LAndExp> landexps;
 
     public LOrExp() {
         firlandexp = null;

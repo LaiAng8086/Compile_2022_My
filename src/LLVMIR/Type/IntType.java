@@ -11,6 +11,10 @@ public class IntType extends AbstractType {
         return bits;
     }
 
+    public int getBits() {
+        return bits;
+    }
+
     @Override
     public String toString() {
         return "i" + bits;

@@ -50,6 +50,14 @@ public class BasicBlock extends Value {
         return insList;
     }
 
+    public int getInstSize() {
+        return insList.size();
+    }
+
+    public AbstractInstruction getLastInst() {
+        return insList.getLast();
+    }
+
     @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();

@@ -196,6 +196,22 @@ public class Stmt implements MySyntaxTreeNode, BlockItem {
         return exps.get(index);
     }
 
+    public Cond getCond() {
+        return cond;
+    }
+
+    public boolean hasElse() {
+        return elseId != -1;
+    }
+
+    public Stmt getStmt1() {
+        return stmt1;
+    }
+
+    public Stmt getElseStmt() {
+        return elseStmt;
+    }
+
     public void output() throws IOException {
         switch (mode) {
             case ASSIGN:

@@ -1,6 +1,6 @@
 package Frontend;
 
-import Frontend.Lexer.Token;
+import Backend.Instructions.Label;
 import Frontend.Lexer.TokenOutput;
 import Frontend.Syntax.Storage.*;
 import LLVMIR.IRUtil;
@@ -12,9 +12,10 @@ import LLVMIR.Value.BasicBlock;
 import LLVMIR.Value.Constant.*;
 import LLVMIR.Value.Instruction.*;
 import LLVMIR.Value.Value;
-import jdk.nashorn.internal.codegen.CompilerConstants;
+import sun.awt.image.ImageWatched;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 
 public class Translator {
     private int nowIntVal;
@@ -24,6 +25,8 @@ public class Translator {
     private boolean isTransConst;
     private Value initVal;
     private Value calcVal;
+    private LinkedList<String> loopStack;
+    private LinkedList<ArrayList<BrInstruction>> breaks;
 
     public Translator() {
         nowIntVal = 0;
@@ -31,6 +34,8 @@ public class Translator {
         curFunction = null;
         curBB = null;
         isTransConst = false;
+        loopStack = new LinkedList<>();
+        breaks = new LinkedList<>();
     }
 
     public void translateCompUnit(CompUnit t) {
@@ -274,13 +279,97 @@ public class Translator {
                 Module.getInstance().symbolTable.dropTable();
                 break;
             case Stmt.IF:
-                //todo
+                int trueBoxId = ctrl.getRegName();
+                int nextBoxId = ctrl.getRegName();
+                int falseBoxId = -1;
+                if (t.hasElse()) {
+                    falseBoxId = ctrl.getRegName();
+                    translateCond(t.getCond(), trueBoxId, falseBoxId);
+                } else {
+                    translateCond(t.getCond(), trueBoxId, nextBoxId);
+                }
+                BasicBlock trueBox = new BasicBlock(String.valueOf(trueBoxId), new LabelType(), curFunction);
+                curFunction.addBasicBlock(trueBox);
+                curBB = trueBox;
+                translateStmt(t.getStmt1());
+                //如果在条件成立的块中最后是break continue 或 return 则不用添加
+                if (!(curBB.getInstSize() > 0 && (curBB.getLastInst() instanceof BrInstruction ||
+                        curBB.getLastInst() instanceof RetInstruction))) {
+                    curBB.addInstruction(new BrInstruction("", new VoidType(), curBB,
+                            String.valueOf(nextBoxId)));
+                }
+                if (t.hasElse()) {
+                    BasicBlock falseBox = new BasicBlock(String.valueOf(falseBoxId), new LabelType(), curFunction);
+                    curFunction.addBasicBlock(falseBox);
+                    curBB = falseBox;
+                    translateStmt(t.getElseStmt());
+                    //如果在条件成立的块中最后是break continue 或 return 则不用添加
+                    if (!(curBB.getInstSize() > 0 && (curBB.getLastInst() instanceof BrInstruction ||
+                            curBB.getLastInst() instanceof RetInstruction))) {
+                        curBB.addInstruction(new BrInstruction("", new VoidType(), curBB, String.valueOf(nextBoxId)));
+                    }
+                }
+                BasicBlock nextBox = new BasicBlock(String.valueOf(nextBoxId), new LabelType(), curFunction);
+                curFunction.addBasicBlock(nextBox);
+                curBB = nextBox;
                 break;
             case Stmt.WHILE:
-                //todo
+                int whileId = ctrl.getRegName();
+                curBB.addInstruction(new BrInstruction("", new VoidType(), curBB, String.valueOf(whileId)));
+                BasicBlock newLoopBox = new BasicBlock(String.valueOf(whileId), new LabelType(), curFunction);
+                curFunction.addBasicBlock(newLoopBox);
+                curBB = newLoopBox;
+                loopStack.add(String.valueOf(whileId));
+                ArrayList<BrInstruction> possibleBreak = new ArrayList<>();
+                breaks.add(possibleBreak);
+                //cond and stmt
+                int whileTrueId = ctrl.getRegName();
+                int whileNextId = ctrl.getRegName();
+                //cond
+                translateCond(t.getCond(), whileTrueId, whileNextId);
+                BasicBlock whileTrueBox = new BasicBlock(String.valueOf(whileTrueId), new LabelType(), curFunction);
+                curFunction.addBasicBlock(whileTrueBox);
+                curBB = whileTrueBox;
+                //stmt
+                translateStmt(t.getStmt1());
+                //如果在条件成立的块中最后是break continue 或 return 则不用添加
+                if (!(curBB.getInstSize() > 0 && (curBB.getLastInst() instanceof BrInstruction ||
+                        curBB.getLastInst() instanceof RetInstruction))) {
+                    curBB.addInstruction(
+                            new BrInstruction("", new VoidType(), curBB, String.valueOf(whileId))
+                    );
+                }
+                //回填break
+                for (BrInstruction br : breaks.getLast()) {
+                    br.changeJump(String.valueOf(whileNextId));
+                }
+                breaks.removeLast();
+                loopStack.removeLast();
+                //结束，进入下一个块
+                BasicBlock whileNextBox = new BasicBlock(String.valueOf(whileNextId), new LabelType(), curFunction);
+                curFunction.addBasicBlock(whileNextBox);
+                curBB = whileNextBox;
                 break;
             case Stmt.BREAK:
-                //todo
+                BrInstruction brk = new BrInstruction("", new VoidType(), curBB, "DaiHuiTian");
+                curBB.addInstruction(brk);
+                breaks.getLast().add(brk);
+                // int afterBreakId = ctrl.getRegName();
+                //讲道理,break和continue后面不该有语句，因为根本不会执行。
+                // BasicBlock afterbreakBox = new BasicBlock(String.valueOf(afterBreakId),
+                //         new LabelType(), curFunction);
+                // curFunction.addBasicBlock(afterbreakBox);
+                // curBB = afterbreakBox;
+                break;
+            case Stmt.CONTINUE:
+                BrInstruction contin = new BrInstruction("", new VoidType(), curBB, loopStack.getLast());
+                curBB.addInstruction(contin);
+                //同上，按理说都不应该出现
+                // int afterContinueId = ctrl.getRegName();
+                // BasicBlock aftercontinueBox = new BasicBlock(String.valueOf(afterContinueId),
+                //         new LabelType(), curFunction);
+                // curFunction.addBasicBlock(aftercontinueBox);
+                // curBB = aftercontinueBox;
                 break;
             case Stmt.RETURN:
                 translateReturn(t);
@@ -293,6 +382,192 @@ public class Translator {
                 break;
 
         }
+    }
+
+    public void translateCond(Cond t, int trueId, int falseId) {
+        translateLOrExp(t.getLorExp(), trueId, falseId);
+    }
+
+    public void translateLOrExp(LOrExp t, int trueId, int falseId) {
+        if (t.landexps.size() == 0) {
+            translateLAndExp(t.firlandexp, trueId, falseId);
+        } else {
+            int nextId = ctrl.getRegName();
+            translateLAndExp(t.firlandexp, trueId, nextId);
+            for (int i = 0; i < t.landexps.size(); i++) {
+                BasicBlock newBox = new BasicBlock(String.valueOf(nextId), new LabelType(), curFunction);
+                curFunction.addBasicBlock(newBox);
+                curBB = newBox;
+                if (i < t.landexps.size() - 1) {
+                    nextId = ctrl.getRegName();
+                    translateLAndExp(t.landexps.get(i), trueId, nextId);
+                } else {
+                    translateLAndExp(t.landexps.get(i), trueId, falseId);
+                }
+            }
+        }
+    }
+
+    public Value convertWidth(Value now, int targetWidth) {
+        if (now.getType() instanceof IntType && ((IntType) now.getType()).getBits() != targetWidth) {
+            Value ret = new ZextInstruction(String.valueOf(ctrl.getRegName()), new IntType(targetWidth),
+                    curBB, now);
+            curBB.addInstruction((AbstractInstruction) ret);
+            return ret;
+        } else
+            return now;
+    }
+
+    public ICmpInstruction buildIcmp(String name, Value op1, Value op2, String cmpOp) {
+        int width1 = ((IntType) op1.getType()).getBits();
+        int width2 = ((IntType) op2.getType()).getBits();
+        if (width1 == width2) {
+            return new ICmpInstruction(name, new IntType(1), curBB, cmpOp, new IntType(width1), op1, op2);
+        } else {
+            if (width1 > width2) {
+                Value newop2 = convertWidth(op2, width1);
+                return new ICmpInstruction(name, new IntType(1), curBB, cmpOp, new IntType(width1), op1, newop2);
+            } else {
+                Value newop1 = convertWidth(op1, width2);
+                return new ICmpInstruction(name, new IntType(1), curBB, cmpOp, new IntType(width2), newop1, op2);
+            }
+        }
+    }
+
+    public Value convertLogic(Value now) {
+        if (now.getType() instanceof IntType && ((IntType) now.getType()).getBits() != 1) {
+            ICmpInstruction ret = buildIcmp(String.valueOf(ctrl.getRegName()), now,
+                    new ConstantInt(0, 32), "ne");
+            curBB.addInstruction(ret);
+            return ret;
+        }
+        return now;
+    }
+
+    public void translateLAndExp(LAndExp t, int trueId, int falseId) {
+        if (t.eqexps.size() == 0) {
+            translateEqExp(t.fireqexp);
+            calcVal = convertLogic(calcVal);  //这一步保证了条件判断时一定是i1
+            curBB.addInstruction(new BrInstruction("", new VoidType(), curBB, calcVal,
+                    String.valueOf(trueId), String.valueOf(falseId)));
+        } else {
+            int nextId = ctrl.getRegName();
+            translateEqExp(t.fireqexp);
+            calcVal = convertLogic(calcVal);
+            curBB.addInstruction(new BrInstruction("", new VoidType(), curBB, calcVal,
+                    String.valueOf(nextId), String.valueOf(falseId)));
+            for (int i = 0; i < t.eqexps.size(); i++) {
+                BasicBlock newBox = new BasicBlock(String.valueOf(nextId), new LabelType(), curFunction);
+                curFunction.addBasicBlock(newBox);
+                curBB = newBox;
+                if (i < t.eqexps.size() - 1) {
+                    nextId = ctrl.getRegName();
+                    translateEqExp(t.eqexps.get(i));
+                    calcVal = convertLogic(calcVal);
+                    curBB.addInstruction(new BrInstruction("", new VoidType(), curBB, calcVal,
+                            String.valueOf(nextId), String.valueOf(falseId)));
+                } else {
+                    translateEqExp(t.eqexps.get(i));
+                    calcVal = convertLogic(calcVal);
+                    curBB.addInstruction(new BrInstruction("", new VoidType(), curBB, calcVal,
+                            String.valueOf(trueId), String.valueOf(falseId)));
+                }
+            }
+        }
+    }
+
+    public void translateEqExp(EqExp t) {
+        Value left, right;
+        translateRelExp(t.firrelexp);
+        left = calcVal;
+        if (t.relexps.size() > 0) {
+            for (int i = 0; i < t.relexps.size(); i++) {
+                translateRelExp(t.relexps.get(i));
+                right = calcVal;
+                if (left instanceof ConstantInt && right instanceof ConstantInt) {
+                    ConstantInt res = null;
+                    if (getOpera(t.operas.get(i)).equals("EQL")) {
+                        int jury = ((ConstantInt) left).getVal() == ((ConstantInt) right).getVal() ? 1 : 0;
+                        res = new ConstantInt(jury, 1);
+                    } else if (getOpera(t.operas.get(i)).equals("NEQ")) {
+                        int jury = ((ConstantInt) left).getVal() != ((ConstantInt) right).getVal() ? 1 : 0;
+                        res = new ConstantInt(jury, 1);
+                    }
+                    left = res;  //? Just remain it as a const int.
+                } else {
+                    if (getOpera(t.operas.get(i)).equals("EQL")) {
+                        left = needLoad(left);
+                        right = needLoad(right);
+                        ICmpInstruction cmpRes = buildIcmp(String.valueOf(ctrl.getRegName()), left, right, "eq");
+                        curBB.addInstruction(cmpRes);
+                        left = cmpRes;
+                    } else if (getOpera(t.operas.get(i)).equals("NEQ")) {
+                        left = needLoad(left);
+                        right = needLoad(right);
+                        ICmpInstruction cmpRes = buildIcmp(String.valueOf(ctrl.getRegName()), left, right, "ne");
+                        curBB.addInstruction(cmpRes);
+                        left = cmpRes;
+                    }
+                }
+            }
+        }
+        calcVal = left;
+    }
+
+    public void translateRelExp(RelExp t) {
+        Value left, right;
+        translateAddExp(t.firaddexp);
+        left = calcVal;
+        if (t.addexps.size() > 0) {
+            for (int i = 0; i < t.addexps.size(); i++) {
+                translateAddExp(t.addexps.get(i));
+                right = calcVal;
+                if (left instanceof ConstantInt && right instanceof ConstantInt) {
+                    ConstantInt res = null;
+                    if (getOpera(t.operas.get(i)).equals("LSS")) {
+                        int jury = ((ConstantInt) left).getVal() < ((ConstantInt) right).getVal() ? 1 : 0;
+                        res = new ConstantInt(jury, 1);
+                    } else if (getOpera(t.operas.get(i)).equals("LEQ")) {
+                        int jury = ((ConstantInt) left).getVal() <= ((ConstantInt) right).getVal() ? 1 : 0;
+                        res = new ConstantInt(jury, 1);
+                    } else if (getOpera(t.operas.get(i)).equals("GRE")) {
+                        int jury = ((ConstantInt) left).getVal() > ((ConstantInt) right).getVal() ? 1 : 0;
+                        res = new ConstantInt(jury, 1);
+                    } else if (getOpera(t.operas.get(i)).equals("GEQ")) {
+                        int jury = ((ConstantInt) left).getVal() >= ((ConstantInt) right).getVal() ? 1 : 0;
+                        res = new ConstantInt(jury, 1);
+                    }
+                    left = res;  //? Just remain it as a const int.
+                } else {
+                    if (getOpera(t.operas.get(i)).equals("LSS")) {
+                        left = needLoad(left);
+                        right = needLoad(right);
+                        ICmpInstruction cmpRes = buildIcmp(String.valueOf(ctrl.getRegName()), left, right, "slt");
+                        curBB.addInstruction(cmpRes);
+                        left = cmpRes;
+                    } else if (getOpera(t.operas.get(i)).equals("LEQ")) {
+                        left = needLoad(left);
+                        right = needLoad(right);
+                        ICmpInstruction cmpRes = buildIcmp(String.valueOf(ctrl.getRegName()), left, right, "sle");
+                        curBB.addInstruction(cmpRes);
+                        left = cmpRes;
+                    } else if (getOpera(t.operas.get(i)).equals("GRE")) {
+                        left = needLoad(left);
+                        right = needLoad(right);
+                        ICmpInstruction cmpRes = buildIcmp(String.valueOf(ctrl.getRegName()), left, right, "sgt");
+                        curBB.addInstruction(cmpRes);
+                        left = cmpRes;
+                    } else if (getOpera(t.operas.get(i)).equals("GEQ")) {
+                        left = needLoad(left);
+                        right = needLoad(right);
+                        ICmpInstruction cmpRes = buildIcmp(String.valueOf(ctrl.getRegName()), left, right, "sge");
+                        curBB.addInstruction(cmpRes);
+                        left = cmpRes;
+                    }
+                }
+            }
+        }
+        calcVal = left;
     }
 
     public void translateAssign(Stmt t) {
@@ -447,6 +722,7 @@ public class Translator {
                     if (getOpera(t.operas.get(i)).equals("PLUS")) {
                         left = needLoad(left);
                         right = needLoad(right);
+
                         AddInstruction addRes = new AddInstruction(String.valueOf(ctrl.getRegName()),
                                 new IntType(32), curBB, left, right);
                         curBB.addInstruction(addRes);
@@ -524,7 +800,8 @@ public class Translator {
                 } else if (t.getUnaryOp().equals("MINU")) {
                     calcVal = new ConstantInt(-((ConstantInt) right).getVal(), 32);
                 } else if (t.getUnaryOp().equals("NOT")) {
-                    //todo:Cond case
+                    int jury = ((ConstantInt) right).getVal() == 0 ? 0 : 1;
+                    calcVal = new ConstantInt(jury, 32);
                 }
             } else {
                 if (t.getUnaryOp().equals("PLUS")) {
@@ -537,14 +814,19 @@ public class Translator {
                     curBB.addInstruction(subRes);
                     calcVal = subRes;
                 } else if (t.getUnaryOp().equals("NOT")) {
-                    //todo:Cond case
+                    right = needLoad(right);
+                    right = convertLogic(right);
+                    XorInstruction xorRes = new XorInstruction(String.valueOf(ctrl.getRegName()), new IntType(1),
+                            curBB, right, new ConstantInt(1, 1));
+                    curBB.addInstruction(xorRes);
+                    calcVal = convertWidth(xorRes, 32);
                 }
             }
         } else if (t.getMode() == UnaryExp.IDENT)    //func call
         {
             String funcName = TokenOutput.getTokenById(t.getIdentId()).getContent();
             Function callee = (Function) Module.getInstance().symbolTable.findGlobalName(funcName);
-            CallInstruction callRes = null;
+            CallInstruction callRes;
             if (t.getFuncrparams() != null) {
                 ArrayList<Value> args = translateFuncRParams(t.getFuncrparams());
                 callRes = new CallInstruction(String.valueOf(ctrl.getRegName()), callee, curBB, args);

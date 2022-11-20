@@ -81,6 +81,7 @@ public class GRF {
     private HashMap<String, Integer> identGRF;   //当前变量如果在寄存器中，则寄存器的编号
     private HashMap<String, Integer> identMemory;     //当前变量在内存中的相对地址（无论现在在不在）
     private HashMap<Integer, String> regContent;  //当前每个寄存器的变量名,如果是常数，不用记
+    private HashMap<String, String> zextTranslate;
     private LinkedList<Integer> regInUse;    //正在使用的寄存器
     private LinkedList<Integer> freeRegs;  //当前空闲的寄存器
     private MIPSProgram mips;
@@ -96,6 +97,19 @@ public class GRF {
         for (int i = 5; i <= 25; i++) {
             freeRegs.addLast(i);
         }
+        zextTranslate = new HashMap<>();    //为了兼容llvm的麻烦事
+    }
+
+    public void addZext(String old, String newn) {     //对转换后值的访问，重定向为转换前。
+        zextTranslate.put(newn, old);
+    }
+
+    private String checkZext(String input) {
+        String attempt = input;
+        while (zextTranslate.containsKey(attempt)) {
+            attempt = zextTranslate.get(attempt);
+        }
+        return attempt;
     }
 
     private boolean hasFreeReg() {
@@ -103,19 +117,21 @@ public class GRF {
     }
 
     public void setAddress(String name, int addr) {
-        identMemory.put(name, addr);
-        isInReg.put(name, false);
+        String rname = checkZext(name);
+        identMemory.put(rname, addr);
+        isInReg.put(rname, false);
     }
 
     public void setReg(String name, int regId)   //主要为第一个参数存到$a0做铺垫
     {
-        identGRF.put(name, regId);
-        regContent.put(regId, name);
-        isInReg.put(name, true);
+        String rname = checkZext(name);
+        identGRF.put(rname, regId);
+        regContent.put(regId, rname);
+        isInReg.put(rname, true);
     }
 
     public int getRegByName(String ident) {
-        return identGRF.get(ident);
+        return identGRF.get(checkZext(ident));
     }
 
     private void writeBackToMem(int regId) {    //事实上，应该除了常数进寄存器需要临时申请数组，其他的情况，应该在alloca阶段就申请好了。
@@ -136,12 +152,13 @@ public class GRF {
     }
 
     public int allocReg(String ident, boolean isConst) {  //强制分配一个寄存器，如果没有空闲的，就利用置换策略写回一个到内存，然后匀出去
+        String rident = checkZext(ident);
         if (hasFreeReg()) {
             int ret = freeRegs.removeFirst();
             if (!isConst) {
-                identGRF.put(ident, ret);
-                regContent.put(ret, ident);
-                isInReg.put(ident, true);
+                identGRF.put(rident, ret);
+                regContent.put(ret, rident);
+                isInReg.put(rident, true);
             }
             regInUse.addLast(ret);
             return ret;
@@ -150,9 +167,9 @@ public class GRF {
             int ret = regInUse.removeFirst();
             needWriteBack(ret); //  如常数这类没有追踪其寄存器存储变量的情况，不用写回内存
             //Get new
-            identGRF.put(ident, ret);
-            regContent.put(ret, ident);
-            isInReg.put(ident, true);
+            identGRF.put(rident, ret);
+            regContent.put(ret, rident);
+            isInReg.put(rident, true);
             regInUse.addLast(ret);
             return ret;
         }
@@ -160,23 +177,26 @@ public class GRF {
 
     public int getReg(String ident) //要么在寄存器中，直接返回，要么申请一个返回
     {
-        if (isInReg.containsKey(ident)) {
-            return identGRF.get(ident);
+        String rident = checkZext(ident);
+        if (isInReg.containsKey(rident) && isInReg.get(rident)) {
+            return identGRF.get(rident);
         } else {
-            return allocReg(ident, false);
+            return allocReg(rident, false);
         }
     }
 
     public boolean isInRegsiter(String ident) {
-        if (!isInReg.containsKey(ident)) {  //从未进入过寄存器，所以默认不在
+        String rident = checkZext(ident);
+        if (!isInReg.containsKey(rident)) {  //从未进入过寄存器，所以默认不在
             return false;
         }
-        return isInReg.get(ident);
+        return isInReg.get(rident);
     }
 
     public int getAddress(String ident) {
-        if (identMemory.containsKey(ident)) {
-            return identMemory.get(ident);
+        String rident = checkZext(ident);
+        if (identMemory.containsKey(rident)) {
+            return identMemory.get(rident);
         }
         return -1;
     }

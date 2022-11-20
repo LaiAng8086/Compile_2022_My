@@ -14,9 +14,11 @@ import LLVMIR.Value.Constant.Function;
 import LLVMIR.Value.Constant.GlobalVariable;
 import LLVMIR.Value.Instruction.*;
 import LLVMIR.Value.Value;
+import SymbolTable.NonFuncTable;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 
 public class TranslateToMIPS {
@@ -104,6 +106,14 @@ public class TranslateToMIPS {
                 translateCall((CallInstruction) i);
             } else if (i instanceof RetInstruction) {
                 translateRet((RetInstruction) i);
+            } else if (i instanceof BrInstruction) {
+                translateBr((BrInstruction) i);
+            } else if (i instanceof ICmpInstruction) {
+                translateIcmp((ICmpInstruction) i);
+            } else if (i instanceof XorInstruction) {
+                translateXor((XorInstruction) i);
+            } else if (i instanceof ZextInstruction) {
+                translateZext((ZextInstruction) i);
             } else {
                 //todo: more instructions
             }
@@ -365,5 +375,71 @@ public class TranslateToMIPS {
             }
             mips.addInstr(new Jr(GRF.RA));
         }
+    }
+
+    public void translateBr(BrInstruction t) {
+        if (t.isCJump()) {
+            mips.addInstr(new NoCondJump(t.getJump1()));
+        } else {
+            int srcId = grfControl.getReg(t.getOp1().getName());
+            mips.addInstr(new Bgtz(srcId, t.getJump1()));
+            mips.addInstr(new NoCondJump(t.getJump2()));
+        }
+    }
+
+    public static HashMap<String, String> relationOp = new HashMap<>();
+
+    static {
+        relationOp.put("slt", "slt");
+        relationOp.put("sle", "sle");
+        relationOp.put("sgt", "sgt");
+        relationOp.put("sge", "sge");
+        relationOp.put("eq", "seq");
+        relationOp.put("ne", "sne");
+    }
+
+    public void translateIcmp(ICmpInstruction t) {
+        String rop = relationOp.get(t.getCmpOp());
+        if (t.getOp1().getName().charAt(0) != '%') {    //保险起见，第一个数如果是常数，则load
+            int src1 = grfControl.allocReg("", true);
+            mips.addInstr(new LoadImmediate(src1, new BigInteger(t.getOp1().getName()).intValue()));
+            int src2 = grfControl.getReg(t.getOp2().getName());
+            int dst = grfControl.getReg(t.getName());
+            mips.addInstr(new SetRelation1(dst, src1, src2, rop));
+        } else if (t.getOp2().getName().charAt(0) != '%') {
+            int src1 = grfControl.getReg(t.getOp1().getName());
+            int imme = new BigInteger(t.getOp2().getName()).intValue();
+            int dst = grfControl.getReg(t.getName());
+            mips.addInstr(new SetRelation2(dst, src1, imme, rop));
+        } else {
+            int src1 = grfControl.getReg(t.getOp1().getName());
+            int src2 = grfControl.getReg(t.getOp2().getName());
+            int dst = grfControl.getReg(t.getName());
+            mips.addInstr(new SetRelation1(dst, src1, src2, rop));
+        }
+    }
+
+    public void translateXor(XorInstruction t) {
+        if (t.getOp1().getName().charAt(0) != '%') {    //可以交换src1和src2
+            int imme = new BigInteger(t.getOp1().getName()).intValue();
+            int src2 = grfControl.getReg(t.getOp2().getName());
+            int dst = grfControl.getReg(t.getName());
+            mips.addInstr(new Xori(dst, src2, imme));
+        } else if (t.getOp2().getName().charAt(0) != '%') {
+            int src1 = grfControl.getReg(t.getOp1().getName());
+            int imme = new BigInteger(t.getOp2().getName()).intValue();
+            int dst = grfControl.getReg(t.getName());
+            mips.addInstr(new Xori(dst, src1, imme));
+        } else {
+            int src1 = grfControl.getReg(t.getOp1().getName());
+            int src2 = grfControl.getReg(t.getOp2().getName());
+            int dst = grfControl.getReg(t.getName());
+            mips.addInstr(new Xori(dst, src1, src2));
+        }
+    }
+
+    public void translateZext(ZextInstruction t) {
+        grfControl.addZext(t.getOp1().getName(), t.getName());
+
     }
 }
