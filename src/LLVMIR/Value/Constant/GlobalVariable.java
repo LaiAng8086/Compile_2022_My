@@ -1,14 +1,18 @@
 package LLVMIR.Value.Constant;
 
 import LLVMIR.Type.AbstractType;
+import LLVMIR.Type.ArrayType;
 import LLVMIR.Type.PointerType;
 import LLVMIR.Value.User;
 import LLVMIR.Value.Value;
+
+import java.util.ArrayList;
 
 //主要特征：在编译期分配内存,而且必须被初始化，是Constant的指针
 public class GlobalVariable extends User {
     private boolean isCon;
     private boolean hasInit;
+    private boolean zeroinitialzer;
 
     /**
      * 新建全局变量定义
@@ -22,6 +26,9 @@ public class GlobalVariable extends User {
         operands.add(AbstractConstant.getAllZero(ty));
         isCon = false;
         hasInit = false;
+        if (ty instanceof ArrayType) {
+            zeroinitialzer = true;
+        }
     }
 
     public GlobalVariable(String name, AbstractType ty, Value belong, AbstractConstant initVal) {
@@ -53,6 +60,10 @@ public class GlobalVariable extends User {
                 gir.append(operands.get(0).toString());
             } else if (operands.get(0) instanceof ConstantInt) {
                 gir.append(((ConstantInt) operands.get(0)).getVal());
+            }
+        } else {
+            if (zeroinitialzer) {
+                gir.append("zeroinitializer");
             }
         }
         gir.append("\n");

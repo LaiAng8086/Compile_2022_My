@@ -7,15 +7,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class InitVal implements MySyntaxTreeNode {
-    public static final int CHOICE1 = 1;
-    public static final int CHOICE2 = 2;
+    public static final int CHOICE1 = 1;    //单个变量
+    public static final int CHOICE2 = 2;    //数组初值
     private int mode;
     private Exp exp;
     private int lbraceId;
     private int rbraceId;
-    private InitVal firinitval;
+    public InitVal firinitval;
     private ArrayList<Integer> commas;
-    private ArrayList<InitVal> initvals;
+    public ArrayList<InitVal> initvals;
 
     public InitVal() {
         mode = -1;

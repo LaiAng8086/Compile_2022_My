@@ -13,7 +13,7 @@ public class FuncFParam implements MySyntaxTreeNode {
     private int rbrackId;
     public ArrayList<Integer> lbracks;
     private ArrayList<Integer> rbracks;
-    private ArrayList<ConstExp> constexps;
+    public ArrayList<ConstExp> constexps;
 
     public FuncFParam() {
         btypeId = -1;

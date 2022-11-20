@@ -1,16 +1,16 @@
 package Backend.Instructions;
 
+import Backend.GRF;
+
 public class Bgtz extends AbstractMIPSInstr {
-    private int regSrc;
-    private String target;
 
     public Bgtz(int src, String tar) {
-        regSrc = src;
-        target = tar;
+        setSrc1(src);
+        setLabel(tar);
     }
 
     @Override
     public String toString() {
-        return "bgtz $" + regSrc + ", " + target + "\n";
+        return "bgtz $" + GRF.regName.get(getSrc1()) + ", " + getLabel() + "\n";
     }
 }

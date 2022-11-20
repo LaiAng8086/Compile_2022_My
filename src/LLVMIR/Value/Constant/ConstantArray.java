@@ -2,12 +2,19 @@ package LLVMIR.Value.Constant;
 
 import LLVMIR.Type.AbstractType;
 import LLVMIR.Type.ArrayType;
-import LLVMIR.Value.Value;
 
 import java.util.ArrayList;
 
 public class ConstantArray extends AbstractConstant {
-    public ConstantArray(String name, AbstractType ty, int num) {
+    private ArrayList<AbstractConstant> elements;
+
+    public ConstantArray(String name, AbstractType ty, int num,
+                         ArrayList<AbstractConstant> eles) {
         super(name, new ArrayType(ty, num), ty.getSize() * num);
+        elements = eles;
+    }
+
+    public AbstractConstant getElementByIndex(int index) {
+        return elements.get(index);
     }
 }

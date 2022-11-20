@@ -24,6 +24,7 @@ import java.util.LinkedList;
 public class TranslateToMIPS {
     private MIPSProgram mips;
     private GRF grfControl;
+    private String curFuncName; //函数内分支应当加上此前缀，以防重名
 
     public TranslateToMIPS(MIPSProgram td) {
         mips = td;
@@ -61,6 +62,7 @@ public class TranslateToMIPS {
     }
 
     private void translateFunction(Function t) {
+        curFuncName = t.getName();
         mips.addInstr(new Label(t.getName()));
         mips.addInstr(new Move(GRF.FP, GRF.SP));    //在返回语句时会将恢复SP的原值
         ArrayList<Argument> FArgs = t.getArgs();
@@ -77,6 +79,7 @@ public class TranslateToMIPS {
         //这里的curStackSize只是模拟压形参，不真的改变
         ArrayList<BasicBlock> bblocks = t.getBblocks();
         for (int i = 0; i < bblocks.size(); i++) {
+            mips.addInstr(new Label("_" + curFuncName + "_" + bblocks.get(i).getName()));
             translateBasicBlock(bblocks.get(i));
         }
     }
@@ -378,12 +381,22 @@ public class TranslateToMIPS {
     }
 
     public void translateBr(BrInstruction t) {
-        if (t.isCJump()) {
-            mips.addInstr(new NoCondJump(t.getJump1()));
+        if (!t.isCJump()) {
+            mips.addInstr(new NoCondJump("_" + curFuncName + "_" + t.getJump1()));
         } else {
-            int srcId = grfControl.getReg(t.getOp1().getName());
-            mips.addInstr(new Bgtz(srcId, t.getJump1()));
-            mips.addInstr(new NoCondJump(t.getJump2()));
+            if (t.getOp1().getName().charAt(0) != '%') //条件就是0或1，直接无条件跳转即可
+            {
+                int boolVal = new BigInteger(t.getOp1().getName()).intValue();
+                if (boolVal == 0) {
+                    mips.addInstr(new NoCondJump("_" + curFuncName + "_" + t.getJump2()));
+                } else {
+                    mips.addInstr(new NoCondJump("_" + curFuncName + "_" + t.getJump1()));
+                }
+            } else {
+                int srcId = grfControl.getReg(t.getOp1().getName());
+                mips.addInstr(new Bgtz(srcId, "_" + curFuncName + "_" + t.getJump1()));
+                mips.addInstr(new NoCondJump("_" + curFuncName + "_" + t.getJump2()));
+            }
         }
     }
 
@@ -406,11 +419,17 @@ public class TranslateToMIPS {
             int src2 = grfControl.getReg(t.getOp2().getName());
             int dst = grfControl.getReg(t.getName());
             mips.addInstr(new SetRelation1(dst, src1, src2, rop));
-        } else if (t.getOp2().getName().charAt(0) != '%') {
+        } else if (t.getOp2().getName().charAt(0) != '%') {     //注意slti只能支持16位，所以也要load
             int src1 = grfControl.getReg(t.getOp1().getName());
-            int imme = new BigInteger(t.getOp2().getName()).intValue();
             int dst = grfControl.getReg(t.getName());
-            mips.addInstr(new SetRelation2(dst, src1, imme, rop));
+            if (rop.equals("slt")) {
+                int src2 = grfControl.allocReg("", true);
+                mips.addInstr(new LoadImmediate(src2, new BigInteger(t.getOp2().getName()).intValue()));
+                mips.addInstr(new SetRelation1(dst, src1, src2, rop));
+            } else {
+                int imme = new BigInteger(t.getOp2().getName()).intValue();
+                mips.addInstr(new SetRelation2(dst, src1, imme, rop));
+            }
         } else {
             int src1 = grfControl.getReg(t.getOp1().getName());
             int src2 = grfControl.getReg(t.getOp2().getName());

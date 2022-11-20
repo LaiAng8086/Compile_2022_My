@@ -10,7 +10,7 @@ public class LVal implements MySyntaxTreeNode {
     private int identId;
     private ArrayList<Integer> lbracks;
     private ArrayList<Integer> rbracks;
-    private ArrayList<Exp> exps;
+    public ArrayList<Exp> exps;
 
     public LVal() {
         identId = -1;

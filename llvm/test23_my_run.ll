@@ -17,9 +17,9 @@ define i32 @main() {
   %3 = getelementptr [2 x [2 x i32]], [2 x [2 x i32]]* %1, i32 0, i32 0, i32 1
   store i32 2, i32* %3
   %4 = getelementptr [2 x [2 x i32]], [2 x [2 x i32]]* %1, i32 0, i32 1, i32 0
-  store i32 3, i32* %4
+  store i32 0, i32* %4
   %5 = getelementptr [2 x [2 x i32]], [2 x [2 x i32]]* %1, i32 0, i32 1, i32 1
-  store i32 4, i32* %5
+  store i32 1, i32* %5
   %6 = load i32, i32* %2
   call void @putint(i32 %6)
   %7 = load i32, i32* %3
@@ -28,6 +28,9 @@ define i32 @main() {
   call void @putint(i32 %8)
   %9 = load i32, i32* %5
   call void @putint(i32 %9)
+  %10 = getelementptr [2 x [2 x i32]], [2 x [2 x i32]]* %1, i32 0, i32 %8, i32 %9
+  %11 = load i32, i32* %10
+  call void @putint(i32 %11)
   ret i32 0
 }
 

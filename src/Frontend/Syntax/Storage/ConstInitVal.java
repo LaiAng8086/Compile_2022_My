@@ -13,9 +13,9 @@ public class ConstInitVal implements MySyntaxTreeNode {
     private ConstExp constexp;
     private int lbraceId;
     private int rbraceId;
-    private ConstInitVal firconstinitval;
+    public ConstInitVal firconstinitval;
     private ArrayList<Integer> commas;
-    private ArrayList<ConstInitVal> constinitvals;
+    public ArrayList<ConstInitVal> constinitvals;
 
     public ConstInitVal() {
         mode = -1;

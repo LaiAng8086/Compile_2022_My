@@ -11,6 +11,7 @@ import LLVMIR.Value.Argument;
 import LLVMIR.Value.BasicBlock;
 import LLVMIR.Value.Constant.*;
 import LLVMIR.Value.Instruction.*;
+import LLVMIR.Value.User;
 import LLVMIR.Value.Value;
 import sun.awt.image.ImageWatched;
 
@@ -27,6 +28,8 @@ public class Translator {
     private Value calcVal;
     private LinkedList<String> loopStack;
     private LinkedList<ArrayList<BrInstruction>> breaks;
+    private ArrayType curArrType;   //供变量数组初始化用
+    private Value curArr;
 
     public Translator() {
         nowIntVal = 0;
@@ -36,6 +39,8 @@ public class Translator {
         isTransConst = false;
         loopStack = new LinkedList<>();
         breaks = new LinkedList<>();
+        curArrType = null;
+        curArr = null;
     }
 
     public void translateCompUnit(CompUnit t) {
@@ -187,19 +192,44 @@ public class Translator {
                 newG.setConst();
                 Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), initVal);
                 Module.getInstance().addGlobalVariable(newG);
-            } else {    //Local Const
-                AllocaInstruction constAlloca = new AllocaInstruction(String.valueOf(ctrl.getRegName()),
-                        new PointerType(type), curBB);
-                curFunction.addAlloca(constAlloca);
+            } else {    //Local Const。UPD：实际上，常量不用存储，因为在编译期完全可以算出来。所以在内存结构中表示即可。
+                // AllocaInstruction constAlloca = new AllocaInstruction(String.valueOf(ctrl.getRegName()),
+                //         new PointerType(type), curBB);
+                // curFunction.addAlloca(constAlloca);
                 if (t.getConstinitval() != null) {  //? what is the type of a store instruction? It's seems can be ignored.
                     translateConstInitVal(t.getConstinitval());
-                    StoreInstruction constStore = new StoreInstruction("", new VoidType(), curBB, initVal, constAlloca);
-                    curBB.addInstruction(constStore);
-                    Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), initVal);
+                    // StoreInstruction constStore = new StoreInstruction("", new VoidType(), curBB, initVal, constAlloca);
+                    // curBB.addInstruction(constStore);
+                    Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), initVal);   //关键是符号表。
                 }
             }
         } else {
-            ;//todo:array case.
+            ArrayList<Integer> dims = new ArrayList<>();
+            for (int i = 0; i < t.constexps.size(); i++) {
+                translateConstExp(t.constexps.get(i));
+                dims.add(((ConstantInt) calcVal).getVal());
+            }
+            AbstractType arrTy = IRUtil.buildArrayType(type, dims);
+            if (Module.getInstance().symbolTable.getSize() == 1)   //  全局数组
+            {
+                translateConstInitVal(t.getConstinitval());
+                GlobalVariable newG = new GlobalVariable(t.getName(), arrTy, Module.getInstance(), (ConstantInt) initVal);
+                newG.setConst();
+                Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), initVal);
+                Module.getInstance().addGlobalVariable(newG);
+            } else    //局部常量数组
+            {
+                // AllocaInstruction constAlloca = new AllocaInstruction(String.valueOf(ctrl.getRegName()),
+                //         new PointerType(arrTy), curBB);
+                // curFunction.addAlloca(constAlloca);
+                if (t.getConstinitval() != null) {  //? what is the type of a store instruction? It's seems can be ignored.
+                    translateConstInitVal(t.getConstinitval());
+                    // StoreInstruction constStore = new StoreInstruction("", new VoidType(), curBB, initVal, constAlloca);
+                    // curBB.addInstruction(constStore);
+                    //注意：此时的initVal应当是ConstantArray类型，取值需要用函数
+                    Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), initVal);
+                }
+            }
         }
     }
 
@@ -238,10 +268,46 @@ public class Translator {
                 }
             }
         } else {
-            //todo:Array Case.
+            ArrayList<Integer> dims = new ArrayList<>();
+            for (int i = 0; i < t.constexps.size(); i++) {
+                translateConstExp(t.constexps.get(i));
+                dims.add(((ConstantInt) calcVal).getVal());
+            }
+            ArrayType arrTy = IRUtil.buildArrayType(type, dims);
+            curArrType = arrTy;
+            if (Module.getInstance().symbolTable.getSize() == 1)   //Global var
+            {
+                if (t.initval != null) {
+                    translateInitValGlobalArray(t.initval);
+                    // the pointer conversion will happen in Global Variable Function
+                    //按照语义约束，全局变量的初始值应当为常数数值
+                    GlobalVariable newG = new GlobalVariable(t.getName(), arrTy, Module.getInstance(), (AbstractConstant) initVal);
+                    Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), newG);
+                    Module.getInstance().addGlobalVariable(newG);
+                } else {
+                    //根据语义约束，未显式初始化的全局变量，其元素值均被初始化为0
+                    GlobalVariable newG = new GlobalVariable(t.getName(), arrTy,
+                            Module.getInstance());  //此时会使用zeroinitializer
+                    Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), newG);
+                    Module.getInstance().addGlobalVariable(newG);
+                }
+            } else    //Local var
+            {
+                AllocaInstruction varAlloca = new AllocaInstruction(String.valueOf(ctrl.getRegName()),
+                        new PointerType(arrTy), curBB);
+                curFunction.addAlloca(varAlloca);
+                if (t.initval != null) {
+                    translateInitval(t.initval);
+                    ArrayList<Value> indexs = new ArrayList<>();
+                    initVarArray(initVal, indexs);
+                }
+                //局部变量没有初始化则不用store，只需要alloca，符号表就存alloca的指针
+                Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), varAlloca);
+            }
         }
     }
 
+    // 因此，单个变量是变量，数组是指针
     public Argument translateFuncFParam(FuncFParam t) {
         AbstractType btype = null;
         if (t.getType().equals("INTTK")) {
@@ -251,16 +317,32 @@ public class Translator {
         {
             Argument ret = new Argument(String.valueOf(ctrl.getRegName()), btype, curBB);
             Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), ret);
-            AllocaInstruction paramAlloca = new AllocaInstruction(String.valueOf(ctrl.getRegName()),
-                    new PointerType(btype), curBB);
-            curFunction.addAlloca(paramAlloca);
-            StoreInstruction initSaveParam = new StoreInstruction("", new VoidType(), curBB, ret, paramAlloca);
-            curBB.addInstruction(initSaveParam);
-            //此时登录符号表的应当是申请的指针指向的内存
-            Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), paramAlloca);
+            // 经过实际检验，llvm里的形参也是可以直接拿来用的，而翻译到目标代码时，形参的运行栈空间也会留出来，故不用担心。
+            // AllocaInstruction paramAlloca = new AllocaInstruction(String.valueOf(ctrl.getRegName()),
+            //         new PointerType(btype), curBB);
+            // curFunction.addAlloca(paramAlloca);
+            // StoreInstruction initSaveParam = new StoreInstruction("", new VoidType(), curBB, ret, paramAlloca);
+            // curBB.addInstruction(initSaveParam);
+            // //此时登录符号表的应当是申请的指针指向的内存
+            // Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), paramAlloca);
             return ret;
         } else {
-            //todo:Array Case
+            //目前只有一维数组和二维数组，需要一定特判
+            Argument ret;
+            if (t.constexps.size() == 0 && t.lbracks.size() == 0)    //一维数组
+            {
+                ret = new Argument(String.valueOf(ctrl.getRegName()), new PointerType(btype), curBB);
+                Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), ret);
+            } else {
+                ArrayList<Integer> dims = new ArrayList<>();
+                for (int i = 0; i < t.constexps.size(); i++) {
+                    translateConstExp(t.constexps.get(i));
+                    dims.add(((ConstantInt) calcVal).getVal());
+                }
+                ArrayType elemTy = IRUtil.buildArrayType(btype, dims);
+                ret = new Argument(String.valueOf(ctrl.getRegName()), new PointerType(elemTy), curBB);
+                Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), ret);
+            }
         }
         return null;
     }
@@ -662,7 +744,40 @@ public class Translator {
             translateConstExp(t.getConstexp());
             initVal = calcVal;
         } else {
-            ;//todo:Array case.
+            //数组情形：此时装配结束后，应当是ConstArray形式
+            //按照语义约束，不允许出现类似{}的空括号对情形
+            ArrayList<AbstractConstant> container = new ArrayList<>();
+            translateConstInitVal(t.firconstinitval);
+            container.add((AbstractConstant) initVal);
+            AbstractType newBaseTy = initVal.getType();
+            for (int i = 0; i < t.constinitvals.size(); i++) {
+                translateConstInitVal(t.constinitvals.get(i));
+                container.add((AbstractConstant) initVal);
+            }
+            int num = 1 + t.constinitvals.size();
+            AbstractType comTy = new ArrayType(newBaseTy, num);
+            initVal = new ConstantArray("", comTy, num, container);
+        }
+    }
+
+    public void translateInitValGlobalArray(InitVal t) {
+        if (t.getMode() == ConstInitVal.CHOICE1) {
+            translateExp(t.getExp());
+            initVal = calcVal;
+        } else {
+            //数组情形：此时装配结束后，应当是ConstArray形式
+            //按照语义约束，不允许出现类似{}的空括号对情形
+            ArrayList<AbstractConstant> container = new ArrayList<>();
+            translateInitValGlobalArray(t.firinitval);
+            container.add((AbstractConstant) initVal);
+            AbstractType newBaseTy = initVal.getType();
+            for (int i = 0; i < t.initvals.size(); i++) {
+                translateInitValGlobalArray(t.initvals.get(i));
+                container.add((AbstractConstant) initVal);
+            }
+            int num = 1 + t.initvals.size();
+            AbstractType comTy = new ArrayType(newBaseTy, num);
+            initVal = new ConstantArray("", comTy, num, container);
         }
     }
 
@@ -671,10 +786,42 @@ public class Translator {
             translateExp(t.getExp());
             initVal = calcVal;
         } else {
-            ;//todo:Array Case.
+            //数组情形。如果是给全局数组赋初值，那么值一定可以查表，如果是给局部数组赋初值，那么应该存的是指针
+            //注意保留数组形式信息，当然到最后一层是混合的，有常数，有指针
+            ArrayList<Value> temp = new ArrayList<>();
+            translateInitval(t.firinitval);
+            temp.add(initVal);
+            for (int i = 0; i < t.initvals.size(); i++) {
+                translateInitval(t.initvals.get(i));
+                temp.add(initVal);
+            }
+            User ret = new User("", new ArrayType(null, 1 + t.initvals.size()), null);
+            ret.loadOperandsAll(temp);
+            initVal = ret;
         }
-
     }
+
+    //这里主要是在局部数组初始化时使用
+    public void initVarArray(Value t, ArrayList<Value> indexs) {
+        if (t.getType() instanceof ArrayType) {
+            ArrayList<Value> eles = ((ArrayType) t.getType()).getIniVal().getOperands();
+            int nowLength = indexs.size();
+            for (int i = 0; i < eles.size(); i++) {
+                indexs.add(new ConstantInt(i, 32));
+                initVarArray(eles.get(i), indexs);
+                indexs.remove(nowLength);
+            }
+        } else {
+            Value ld = needLoad(t);
+            GetElementPtrInstruction gep = new GetElementPtrInstruction(
+                    String.valueOf(ctrl.getRegName()), curArrType, curBB, curArr, indexs
+            );
+            curBB.addInstruction(gep);
+            StoreInstruction varInit = new StoreInstruction("", new VoidType(), curBB, ld, gep);
+            curBB.addInstruction(varInit);
+        }
+    }
+
 
     public void translateConstExp(ConstExp t) {
         translateAddExp(t.getAddExp());
@@ -701,6 +848,7 @@ public class Translator {
         }
         return t;
     }
+
 
     public void translateAddExp(AddExp t) {
         Value left, right;
@@ -868,12 +1016,76 @@ public class Translator {
     }
 
     public void translateLVal(LVal t) {
-        if (t.getDimensions() == 0)    //single var
+        String varName = TokenOutput.getTokenById(t.getIdentId()).getContent();
+        Value def = Module.getInstance().symbolTable.findByName(varName);
+        if (def.getType() instanceof IntType)    //single var
         {
-            String varName = TokenOutput.getTokenById(t.getIdentId()).getContent();
-            calcVal = Module.getInstance().symbolTable.findByName(varName);
-        } else {
-            //todo:array case
+            calcVal = def;
+        } else if (def.getType() instanceof ArrayType) {
+            //实际应用场景为部分数组传参，故索引第一项有个0
+            //对于数组应当得到其指针,每确定一层索引，少一层。因此可以将下标的翻译，和指针的类型分开做
+            AbstractType lvalType = def.getType();
+            for (int i = 0; i < t.exps.size(); i++) {
+                lvalType = ((ArrayType) lvalType).getElementType();
+            }
+            ArrayList<Value> indexs = new ArrayList<>();
+            indexs.add(new ConstantInt(0, 32));
+            for (int i = 0; i < t.exps.size(); i++) {
+                translateExp(t.exps.get(i));
+                indexs.add(calcVal);
+            }
+            GetElementPtrInstruction gp;
+            if (lvalType instanceof ArrayType)   //部分数组传参，取元素类型指针
+            {
+                gp = new GetElementPtrInstruction(
+                        String.valueOf(ctrl.getRegName()), new PointerType(((ArrayType) lvalType).getElementType()),
+                        curBB, def, indexs);
+            } else    //直接取元素
+            {
+                gp = new GetElementPtrInstruction(
+                        String.valueOf(ctrl.getRegName()), lvalType, curBB, def, indexs);
+            }
+            curBB.addInstruction(gp);
+            calcVal = gp;
+        } else if (def.getType() instanceof PointerType) {
+            //场景：一般函数对形参数组的使用，不过注意，有可能一维都没有？一维都没有的时候直接拿来用即可
+            if (t.exps.size() == 0) {
+                calcVal = def;
+            } else {
+                //当然由于语义约束，数组只有2维，所以返回值类型应该都是i32 *
+                ArrayList<Value> indexs = new ArrayList<>();
+                int realDims; //这里的特殊之处，是再使用部分传参时，需要补个0
+                if (((PointerType) def.getType()).getPointee() instanceof ArrayType) {
+                    realDims = 2;
+                } else {
+                    realDims = 1;
+                }
+                /*  示例如下
+
+                    int func2(int b[][3])
+                    {
+                        func1(b[1]);
+                        return b[1][2];
+                    }
+                    %l1 = getelementptr inbounds [3 x i32], [3 x i32]* %l0, i64 1, i64 0
+                    %l2 = call i32 @func1(i32* %l1)
+                    %l3 = getelementptr inbounds [3 x i32], [3 x i32]* %l0, i64 1, i64 2
+                    %l4 = load i32, i32* %l3
+                    ret i32 %l4
+                 */
+                for (int i = 0; i < t.exps.size(); i++) {
+                    translateExp(t.exps.get(i));
+                    indexs.add(calcVal);
+                }
+                if (t.exps.size() < realDims) {
+                    indexs.add(new ConstantInt(0, 32));
+                }
+                GetElementPtrInstruction gp = new GetElementPtrInstruction(
+                        String.valueOf(ctrl.getRegName()), new PointerType(new IntType(32)), curBB, def, indexs
+                );
+                curBB.addInstruction(gp);
+                calcVal = gp;
+            }
         }
     }
 }

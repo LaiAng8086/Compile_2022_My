@@ -3,82 +3,57 @@ source_filename = "llvm-link"
 target datalayout = "e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-linux-gnu"
 
-@.str = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
-@.str.3 = private unnamed_addr constant [3 x i8] c"%d\00", align 1
+@.str = private unnamed_addr constant [3 x i8] c"%d\00", align 1
 @.str.1 = private unnamed_addr constant [3 x i8] c"%c\00", align 1
 @.str.2 = private unnamed_addr constant [4 x i8] c"%d:\00", align 1
-@.str.3.4 = private unnamed_addr constant [4 x i8] c" %d\00", align 1
+@.str.3 = private unnamed_addr constant [4 x i8] c" %d\00", align 1
 @.str.4 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
 @.str.5 = private unnamed_addr constant [3 x i8] c"%s\00", align 1
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @foo1(i32 %l0, i32 %l1) #0 {
-  %l2 = add nsw i32 %l0, %l1
-  ret i32 %l2
+define dso_local i32 @func1(i32* %l0) #0 {
+  %l1 = getelementptr i32, i32* %l0, i64 2
+  %l2 = load i32, i32* %l1
+  call void @putint(i32 %l2)
+  %l3 = getelementptr i32, i32* %l0, i64 2
+  %l4 = load i32, i32* %l3, align 4
+  ret i32 %l4
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
-define dso_local i32 @foo2(i32 %0, i32 %1, i32 %2, i32 %3) #0 {
-  %5 = alloca i32, align 4
-  %6 = alloca i32, align 4
-  %7 = alloca i32, align 4
-  %8 = alloca i32, align 4
-  %9 = alloca i32, align 4
-  store i32 %0, i32* %5, align 4
-  store i32 %1, i32* %6, align 4
-  store i32 %2, i32* %7, align 4
-  store i32 %3, i32* %8, align 4
-  %10 = load i32, i32* %5, align 4
-  %11 = load i32, i32* %6, align 4
-  %12 = mul nsw i32 %10, %11
-  %13 = load i32, i32* %7, align 4
-  %14 = load i32, i32* %8, align 4
-  %15 = sdiv i32 %13, %14
-  %16 = add nsw i32 %12, %15
-  %17 = load i32, i32* %8, align 4
-  %18 = load i32, i32* %7, align 4
-  %19 = add nsw i32 %17, %18
-  %20 = load i32, i32* %6, align 4
-  %21 = add nsw i32 %19, %20
-  %22 = load i32, i32* %5, align 4
-  %23 = add nsw i32 %21, %22
-  %24 = call i32 @foo1(i32 %16, i32 %23)
-  store i32 %24, i32* %9, align 4
-  %25 = load i32, i32* %9, align 4
-  ret i32 %25
+define dso_local i32 @func2([3 x i32]* %l0) #0 {
+  %l1 = getelementptr inbounds [3 x i32], [3 x i32]* %l0, i64 1, i64 0
+  %l2 = call i32 @func1(i32* %l1)
+  %l3 = getelementptr inbounds [3 x i32], [3 x i32]* %l0, i64 1, i64 2
+  %l4 = load i32, i32* %l3
+  ret i32 %l4
 }
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @main() #0 {
   %1 = alloca i32, align 4
-  %2 = alloca i32, align 4
-  %3 = alloca i32, align 4
-  %4 = alloca i32, align 4
-  %5 = alloca i32, align 4
+  %2 = alloca [3 x [3 x i32]], align 16
   store i32 0, i32* %1, align 4
-  %6 = call i32 (...) bitcast (i32 ()* @getint to i32 (...)*)()
-  store i32 %6, i32* %2, align 4
-  %7 = call i32 (...) bitcast (i32 ()* @getint to i32 (...)*)()
-  store i32 %7, i32* %3, align 4
-  %8 = call i32 (...) bitcast (i32 ()* @getint to i32 (...)*)()
-  store i32 %8, i32* %4, align 4
-  %9 = call i32 (...) bitcast (i32 ()* @getint to i32 (...)*)()
-  store i32 %9, i32* %5, align 4
-  %10 = load i32, i32* %2, align 4
-  %11 = load i32, i32* %3, align 4
-  %12 = load i32, i32* %4, align 4
-  %13 = load i32, i32* %5, align 4
-  %14 = call i32 @foo2(i32 %10, i32 %11, i32 %12, i32 %13)
-  %15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str, i64 0, i64 0), i32 %14)
+  %3 = getelementptr inbounds [3 x [3 x i32]], [3 x [3 x i32]]* %2, i64 0, i64 1
+  %4 = getelementptr inbounds [3 x i32], [3 x i32]* %3, i64 0, i64 2
+  store i32 110, i32* %4, align 4
+  %5 = getelementptr inbounds [3 x [3 x i32]], [3 x [3 x i32]]* %2, i64 0, i64 2
+  %6 = getelementptr inbounds [3 x i32], [3 x i32]* %5, i64 0, i64 2
+  store i32 1, i32* %6, align 8
+  %7 = getelementptr inbounds [3 x [3 x i32]], [3 x [3 x i32]]* %2, i64 0, i64 0
+  %8 = call i32 @func2([3 x i32]* %7)
+  call void @putint(i32 %8)
+  %9 = getelementptr inbounds [3 x [3 x i32]], [3 x [3 x i32]]* %2, i64 0, i64 2
+  %10 = getelementptr inbounds [3 x i32], [3 x i32]* %9, i64 0, i64 0
+  %11 = call i32 @func1(i32* %10)
+  call void @putint(i32 %11)
   ret i32 0
 }
-
-declare dso_local i32 @printf(i8*, ...) #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local i32 @getint() #0 {
   %1 = alloca i32, align 4
-  %2 = call i32 (i8*, ...) @__isoc99_scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @.str.3, i64 0, i64 0), i32* %1)
+  %2 = call i32 (i8*, ...) @__isoc99_scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @.str, i64 0, i64 0), i32* %1)
   %3 = load i32, i32* %1, align 4
   ret i32 %3
 }
@@ -100,7 +75,7 @@ define dso_local i32 @getarray(i32* %0) #0 {
   %3 = alloca i32, align 4
   %4 = alloca i32, align 4
   store i32* %0, i32** %2, align 8
-  %5 = call i32 (i8*, ...) @__isoc99_scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @.str.3, i64 0, i64 0), i32* %3)
+  %5 = call i32 (i8*, ...) @__isoc99_scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @.str, i64 0, i64 0), i32* %3)
   store i32 0, i32* %4, align 4
   br label %6
 
@@ -115,7 +90,7 @@ define dso_local i32 @getarray(i32* %0) #0 {
   %12 = load i32, i32* %4, align 4
   %13 = sext i32 %12 to i64
   %14 = getelementptr inbounds i32, i32* %11, i64 %13
-  %15 = call i32 (i8*, ...) @__isoc99_scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @.str.3, i64 0, i64 0), i32* %14)
+  %15 = call i32 (i8*, ...) @__isoc99_scanf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @.str, i64 0, i64 0), i32* %14)
   br label %16
 
 16:                                               ; preds = %10
@@ -134,9 +109,11 @@ define dso_local void @putint(i32 %0) #0 {
   %2 = alloca i32, align 4
   store i32 %0, i32* %2, align 4
   %3 = load i32, i32* %2, align 4
-  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @.str.3, i64 0, i64 0), i32 %3)
+  %4 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([3 x i8], [3 x i8]* @.str, i64 0, i64 0), i32 %3)
   ret void
 }
+
+declare dso_local i32 @printf(i8*, ...) #1
 
 ; Function Attrs: noinline nounwind optnone uwtable
 define dso_local void @putch(i32 %0) #0 {
@@ -171,7 +148,7 @@ define dso_local void @putarray(i32 %0, i32* %1) #0 {
   %15 = sext i32 %14 to i64
   %16 = getelementptr inbounds i32, i32* %13, i64 %15
   %17 = load i32, i32* %16, align 4
-  %18 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.3.4, i64 0, i64 0), i32 %17)
+  %18 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @.str.3, i64 0, i64 0), i32 %17)
   br label %19
 
 19:                                               ; preds = %12
