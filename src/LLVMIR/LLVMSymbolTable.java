@@ -4,6 +4,7 @@ import LLVMIR.Value.Value;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 
 public class LLVMSymbolTable {
     private LinkedList<HashMap<String, Value>> symbletables;

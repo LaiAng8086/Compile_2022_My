@@ -187,13 +187,24 @@ public class GRF {
         }
     }
 
-    public int getReg(String ident) //要么在寄存器中，直接返回，要么申请一个返回
+    public int getReg(String ident) //要么在寄存器中，直接返回，要么申请一个返回（注意：此版本不加载内容）
     {
         String rident = checkZext(ident);
         if (isInReg.containsKey(rident) && isInReg.get(rident)) {
             return identGRF.get(rident);
         } else {
             return allocReg(rident, false);
+        }
+    }
+
+    public int getRegMayLoad(String ident) {    //按照llvm应该在寄存器中，但是由于分配策略被置换，现在申请一个加载、返回。
+        String rident = checkZext(ident);
+        if (isInReg.containsKey(rident) && isInReg.get(rident)) {
+            return identGRF.get(rident);
+        } else {
+            int retId = allocReg(rident, false);
+            mips.addInstr(new LoadWord(retId, -identMemory.get(rident), GRF.FP));
+            return retId;
         }
     }
 

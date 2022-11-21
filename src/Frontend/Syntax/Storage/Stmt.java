@@ -196,6 +196,10 @@ public class Stmt implements MySyntaxTreeNode, BlockItem {
         return exps.get(index);
     }
 
+    public int getExpsNum() {
+        return exps.size();
+    }
+
     public Cond getCond() {
         return cond;
     }
