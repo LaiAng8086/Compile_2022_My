@@ -40,6 +40,14 @@ public class GetElementPtrInstruction extends AbstractInstruction {
         }
     }
 
+    public AbstractType getRef() {
+        return rf;
+    }
+
+    public ArrayList<Value> getIndexs() {
+        return indexs;
+    }
+
     @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();

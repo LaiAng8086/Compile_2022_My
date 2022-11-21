@@ -9,6 +9,7 @@ import LLVMIR.Value.Constant.ConstantArray;
 import LLVMIR.Value.Constant.ConstantInt;
 import LLVMIR.Value.Value;
 
+import java.sql.Array;
 import java.util.ArrayList;
 
 public class IRUtil {
@@ -68,5 +69,17 @@ public class IRUtil {
         }
         //按照一维去理解数组，num填当前维的元素个数
         return new ConstantArray("", nowType, nowDims, nowElements);
+    }
+
+    public static ArrayList<Integer> getAllInts(ConstantArray t) {
+        ArrayList<Integer> ret = new ArrayList<>();
+        for (int i = 0; i < t.getNums(); i++) {
+            if (t.getElementByIndex(i) instanceof ConstantArray) {
+                ret.addAll(getAllInts((ConstantArray) t.getElementByIndex(i)));
+            } else {
+                ret.add(((ConstantInt) t.getElementByIndex(i)).getVal());
+            }
+        }
+        return ret;
     }
 }

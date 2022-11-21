@@ -85,6 +85,9 @@ public class GRF {
     private LinkedList<Integer> regInUse;    //正在使用的寄存器
     private LinkedList<Integer> freeRegs;  //当前空闲的寄存器
     private MIPSProgram mips;
+    private HashMap<String, Boolean> isRealAddress;
+
+    //打算采用折中方案，局部变量采用相对当前函数栈帧的相对地址，数组地址保存绝对地址
 
     public GRF(MIPSProgram dealWith) {
         isInReg = new HashMap<>();
@@ -104,12 +107,21 @@ public class GRF {
         zextTranslate.put(newn, old);
     }
 
-    private String checkZext(String input) {
+    private String checkZext(String input) {    //直到找到最初的虚拟寄存器号
         String attempt = input;
         while (zextTranslate.containsKey(attempt)) {
             attempt = zextTranslate.get(attempt);
         }
         return attempt;
+    }
+
+    public void setRealAddress(String ident) {
+        isRealAddress.put(ident, true);
+    }
+
+    public boolean isUsingRealAddr(String ident) {
+        String rident = checkZext(ident);
+        return isRealAddress.containsKey(rident) && isRealAddress.get(rident);
     }
 
     private boolean hasFreeReg() {
@@ -122,7 +134,7 @@ public class GRF {
         isInReg.put(rname, false);
     }
 
-    public void setReg(String name, int regId)   //主要为第一个参数存到$a0做铺垫
+    public void setReg(String name, int regId)   //主要为第一个参数存到$a0做铺垫，当然还有的用途是给gep用
     {
         String rname = checkZext(name);
         identGRF.put(rname, regId);

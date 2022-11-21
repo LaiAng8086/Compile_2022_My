@@ -1,5 +1,7 @@
 package Backend.Instructions;
 
+import Backend.GRF;
+
 public class LoadWord2 extends AbstractMIPSInstr {
     public LoadWord2(int dst, String from) {
         setDst(dst);
@@ -8,6 +10,6 @@ public class LoadWord2 extends AbstractMIPSInstr {
 
     @Override
     public String toString() {
-        return "lw $" + RegDst + ", " + label + "\n";
+        return "lw $" + GRF.regName.get(RegDst) + ", " + label + "\n";
     }
 }

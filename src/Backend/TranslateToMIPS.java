@@ -3,19 +3,17 @@ package Backend;
 import Backend.Global.GlobalMIPSString;
 import Backend.Global.GlobalMIPSVar;
 import Backend.Instructions.*;
+import LLVMIR.IRUtil;
 import LLVMIR.Module;
-import LLVMIR.Type.IntType;
-import LLVMIR.Type.VoidType;
+import LLVMIR.Type.*;
 import LLVMIR.Value.Argument;
 import LLVMIR.Value.BasicBlock;
-import LLVMIR.Value.Constant.ConstantInt;
-import LLVMIR.Value.Constant.ConstantString;
-import LLVMIR.Value.Constant.Function;
-import LLVMIR.Value.Constant.GlobalVariable;
+import LLVMIR.Value.Constant.*;
 import LLVMIR.Value.Instruction.*;
 import LLVMIR.Value.Value;
 import SymbolTable.NonFuncTable;
 
+import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,10 +23,12 @@ public class TranslateToMIPS {
     private MIPSProgram mips;
     private GRF grfControl;
     private String curFuncName; //函数内分支应当加上此前缀，以防重名
+    private int nowAddress;
 
     public TranslateToMIPS(MIPSProgram td) {
         mips = td;
         grfControl = new GRF(mips);
+        nowAddress = 0x7fffeffc;
     }
 
     public void toMIPS() {
@@ -55,8 +55,13 @@ public class TranslateToMIPS {
         } else if (!t.initExists() && t.getType() instanceof IntType) {
             mips.addGlobalSetting(new GlobalMIPSVar(t.getName(), 4));
         } else {
-            //todo: array case
-            ;
+            //数组情形：注意，指针型应当找到其ref type
+            GlobalMIPSVar newVar = new GlobalMIPSVar(t.getName(),
+                    t.getType().getSize());
+            if (t.initExists()) {
+                newVar.addAllInitvals(IRUtil.getAllInts((ConstantArray) t.getInitval()));
+            }
+            mips.addGlobalSetting(newVar);
         }
 
     }
@@ -117,6 +122,8 @@ public class TranslateToMIPS {
                 translateXor((XorInstruction) i);
             } else if (i instanceof ZextInstruction) {
                 translateZext((ZextInstruction) i);
+            } else if (i instanceof GetElementPtrInstruction) {
+                translateGEP((GetElementPtrInstruction) i);
             } else {
                 //todo: more instructions
             }
@@ -124,7 +131,12 @@ public class TranslateToMIPS {
     }
 
     private void translateAlloca(AllocaInstruction t) {
-        int curStackSize = mips.getCurStackSize() + 4;
+        int curStackSize = 0;   //本函数开的局部数组地址，仍然记其相对FP的偏移。
+        if (t.getType() instanceof PointerType) {
+            curStackSize = mips.getCurStackSize() + 4;
+        } else if (t.getType() instanceof ArrayType) {
+            curStackSize = mips.getCurStackSize() + t.getType().getSize();
+        }
         grfControl.setAddress(t.getName(), curStackSize);
         mips.setCurStackSize(curStackSize);
     }
@@ -156,6 +168,9 @@ public class TranslateToMIPS {
         int regId = grfControl.allocReg(i.getName(), false);
         if (i.getOp1() instanceof GlobalVariable) {
             mips.addInstr(new LoadWord2(regId, i.getOp1().getName()));
+        } else if (i.getOp1() instanceof GetElementPtrInstruction) {
+            int frmReg = grfControl.getReg(i.getOp1().getName());
+            mips.addInstr(new LoadWord(regId, 0, frmReg));
         } else {
             mips.addInstr(new LoadWord(regId, -grfControl.getAddress(i.getOp1().getName()), GRF.FP));
         }
@@ -459,6 +474,31 @@ public class TranslateToMIPS {
 
     public void translateZext(ZextInstruction t) {
         grfControl.addZext(t.getOp1().getName(), t.getName());
+    }
 
+    public void translateGEP(GetElementPtrInstruction t) {
+        int constOffset = 0;
+        int regId = grfControl.allocReg(t.getName(), false);
+        if (t.getOp1() instanceof GlobalVariable) {
+            mips.addInstr(new LoadAddress(regId, t.getOp1().getName()));
+        } else {
+            int addr = grfControl.getAddress(t.getOp1().getName());
+            mips.addInstr(new Addiu(regId, GRF.FP, -addr));
+        }
+        ArrayList<Value> indexs = t.getIndexs();
+        AbstractType nowTy = t.getRef();
+        for (int i = 0; i < indexs.size(); i++) {
+            if (indexs.get(i) instanceof ConstantInt) {
+                constOffset += ((ConstantInt) indexs.get(i)).getVal() * nowTy.getSize();
+            } else {
+                int tempRegId = grfControl.getReg((indexs.get(i)).getName());
+                mips.addInstr(new Mul2(tempRegId, tempRegId, nowTy.getSize()));
+                mips.addInstr(new Addu(regId, regId, tempRegId));
+            }
+            if (nowTy instanceof ArrayType) {
+                nowTy = ((ArrayType) nowTy).getElementType();
+            }
+        }
+        mips.addInstr(new Addiu(regId, regId, constOffset));
     }
 }

@@ -35,7 +35,7 @@ public class GlobalMIPSVar extends AbstractGlobal {
             ret.append("\n");
             return ret.toString();
         } else {
-            return ident + ": .space" + size + "\n";
+            return ident + ": .space " + size + "\n";
         }
     }
 }

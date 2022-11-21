@@ -292,7 +292,7 @@ public class Translator {
                 } else {
                     //根据语义约束，未显式初始化的全局变量，其元素值均被初始化为0
                     GlobalVariable newG = new GlobalVariable(t.getName(), arrTy,
-                            Module.getInstance());  //此时会使用zeroinitializer
+                            Module.getInstance(), true);  //此时会使用zeroinitializer
                     Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), newG);
                     Module.getInstance().addGlobalVariable(newG);
                 }

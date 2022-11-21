@@ -28,9 +28,6 @@ public class GlobalVariable extends User {
         operands.add(AbstractConstant.getAllZero(ty));
         isCon = false;
         hasInit = false;
-        if (ty instanceof ArrayType) {
-            zeroinitialzer = true;
-        }
     }
 
     //此处，isArr必须为真
