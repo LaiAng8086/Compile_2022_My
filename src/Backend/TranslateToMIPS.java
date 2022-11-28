@@ -11,6 +11,7 @@ import LLVMIR.Value.BasicBlock;
 import LLVMIR.Value.Constant.*;
 import LLVMIR.Value.Instruction.*;
 import LLVMIR.Value.Value;
+import Optimization.DivOpt;
 import SymbolTable.NonFuncTable;
 
 import java.lang.reflect.Array;
@@ -250,11 +251,12 @@ public class TranslateToMIPS {
             mips.addInstr(new Mflo(dst));
         } else if (t.getOp2().getName().charAt(0) != '%') {
             int src1 = grfControl.getRegMayLoad(t.getOp1().getName());
-            int src2 = grfControl.allocReg("", true);
-            mips.addInstr(new LoadImmediate(src2, new BigInteger(t.getOp2().getName()).intValue()));
+            // int src2 = grfControl.allocReg("", true);
+            // mips.addInstr(new LoadImmediate(src2, new BigInteger(t.getOp2().getName()).intValue()));
             int dst = grfControl.getReg(t.getName());
-            mips.addInstr(new Div(src1, src2));
-            mips.addInstr(new Mflo(dst));
+            // mips.addInstr(new Div(src1, src2));
+            // mips.addInstr(new Mflo(dst));
+            DivOpt.replaceDiv(mips, src1, new BigInteger(t.getOp2().getName()).intValue(), dst);
         } else {
             int src1 = grfControl.getRegMayLoad(t.getOp1().getName());
             int src2 = grfControl.getRegMayLoad(t.getOp2().getName());
