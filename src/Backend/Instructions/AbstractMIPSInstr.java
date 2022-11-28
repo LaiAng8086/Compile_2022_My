@@ -4,7 +4,7 @@ public class AbstractMIPSInstr {
     protected int RegSrc1;
     protected int RegSrc2;
     protected int RegDst;
-    protected int Imme;
+    protected long Imme;
     protected String label;
 
     public AbstractMIPSInstr() {
@@ -23,7 +23,7 @@ public class AbstractMIPSInstr {
         RegDst = reg;
     }
 
-    public void setImme(int imm) {
+    public void setImme(long imm) {
         Imme = imm;
     }
 
@@ -43,7 +43,7 @@ public class AbstractMIPSInstr {
         return RegDst;
     }
 
-    public int getImme() {
+    public long getImme() {
         return Imme;
     }
 
