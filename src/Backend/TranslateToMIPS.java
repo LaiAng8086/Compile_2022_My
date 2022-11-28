@@ -222,17 +222,17 @@ public class TranslateToMIPS {
 
     private void translateMul(MulInstruction t) {   //此时如果按照Mars文档说法，低32位的结果应当在dst对应寄存器中。
         if (t.getOp1().getName().charAt(0) != '%') {
-            int src1 = grfControl.allocReg("", true);
-            mips.addInstr(new LoadImmediate(src1, new BigInteger(t.getOp1().getName()).intValue()));
-            int src2 = grfControl.getRegMayLoad(t.getOp2().getName());
+            // int src1 = grfControl.allocReg("", true);
+            // mips.addInstr(new LoadImmediate(src1, new BigInteger(t.getOp1().getName()).intValue()));
+            int src1 = grfControl.getRegMayLoad(t.getOp2().getName());
             int dst = grfControl.getReg(t.getName());
-            mips.addInstr(new Mul(dst, src1, src2));
+            mips.addInstr(new Mul2(dst, src1, new BigInteger(t.getOp1().getName()).intValue()));
         } else if (t.getOp2().getName().charAt(0) != '%') {
             int src1 = grfControl.getRegMayLoad(t.getOp1().getName());
-            int src2 = grfControl.allocReg("", true);
-            mips.addInstr(new LoadImmediate(src2, new BigInteger(t.getOp2().getName()).intValue()));
+            // int src2 = grfControl.allocReg("", true);
+            // mips.addInstr(new LoadImmediate(src2, new BigInteger(t.getOp2().getName()).intValue()));
             int dst = grfControl.getReg(t.getName());
-            mips.addInstr(new Mul(dst, src1, src2));
+            mips.addInstr(new Mul2(dst, src1, new BigInteger(t.getOp2().getName()).intValue()));
         } else {
             int src1 = grfControl.getRegMayLoad(t.getOp1().getName());
             int src2 = grfControl.getRegMayLoad(t.getOp2().getName());
@@ -276,11 +276,16 @@ public class TranslateToMIPS {
             mips.addInstr(new Mfhi(dst));
         } else if (t.getOp2().getName().charAt(0) != '%') {
             int src1 = grfControl.getRegMayLoad(t.getOp1().getName());
-            int src2 = grfControl.allocReg("", true);
-            mips.addInstr(new LoadImmediate(src2, new BigInteger(t.getOp2().getName()).intValue()));
+            int src2 = grfControl.allocReg("", false);
+            mips.addInstr(new Move(src2, src1));
+            // mips.addInstr(new LoadImmediate(src2, new BigInteger(t.getOp2().getName()).intValue()));
             int dst = grfControl.getReg(t.getName());
-            mips.addInstr(new Div(src1, src2));
-            mips.addInstr(new Mfhi(dst));
+            // mips.addInstr(new Div(src1, src2));
+            // mips.addInstr(new Mfhi(dst));
+            int imme = new BigInteger(t.getOp2().getName()).intValue();
+            DivOpt.replaceDiv(mips, src1, imme, dst);
+            mips.addInstr(new Mul2(dst, dst, imme));
+            mips.addInstr(new Subu(dst, src2, dst));
         } else {
             int src1 = grfControl.getRegMayLoad(t.getOp1().getName());
             int src2 = grfControl.getRegMayLoad(t.getOp2().getName());

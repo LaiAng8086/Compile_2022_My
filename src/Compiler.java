@@ -6,6 +6,7 @@ import Frontend.OutputHandler;
 import Frontend.Syntax.Parser.CompUnitParser;
 import Frontend.Translator;
 import LLVMIR.Module;
+import Optimization.MulOpt;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,6 +46,9 @@ public class Compiler {
         MIPSProgram mipsOut = new MIPSProgram();
         TranslateToMIPS getMips = new TranslateToMIPS(mipsOut);
         getMips.toMIPS();
+        if (OutputHandler.Optimization) {
+            MulOpt.replaceMul2(mipsOut);
+        }
         if (OutputHandler.MIPSOutput) {
             MIPSProgram.outputInit();
             mipsOut.output();
