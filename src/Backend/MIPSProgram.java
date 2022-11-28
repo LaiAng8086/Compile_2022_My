@@ -37,6 +37,14 @@ public class MIPSProgram {
         text.add(newn);
     }
 
+    public LinkedList<AbstractMIPSInstr> getText() {
+        return text;
+    }
+
+    public void setText(LinkedList<AbstractMIPSInstr> afterOpt) {
+        text = afterOpt;
+    }
+
     public static void outputInit() throws IOException {
         mipsOutput = new BufferedWriter(new FileWriter("mips.txt"));
     }
