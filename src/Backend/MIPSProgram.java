@@ -14,15 +14,25 @@ public class MIPSProgram {
     private LinkedList<AbstractGlobal> data;
     public static BufferedWriter mipsOutput;
     private int curStackSize;
+    private int nowLine;    //对应中间代码当前基本块的行号
 
     public MIPSProgram() {
         data = new LinkedList<>();
         text = new LinkedList<>();
         curStackSize = 0;
+        nowLine = 0;
     }
 
     public int getCurStackSize() {
         return curStackSize;
+    }
+
+    public void setNowLine(int newn) {
+        nowLine = newn;
+    }
+
+    public int getNowLine() {
+        return nowLine;
     }
 
     public void setCurStackSize(int newSize) {

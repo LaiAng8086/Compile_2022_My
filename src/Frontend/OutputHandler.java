@@ -12,7 +12,10 @@ public class OutputHandler {
     public static boolean LLVMOutput = true;    //中间代码导出开关
     public static boolean stageDebug = false;    //提交时记得关闭
     public static boolean MIPSOutput = true;    //MIPS汇编导出开关
-    public static boolean Optimization = true;  //优化开关
+    public static boolean Optimization = true;  //优化总开关
+    public static boolean loadOptTest = true;   //某种实验性load开关
+    public static boolean DivOpt = false;   //除法优化开关
+
     static {
         try {
             if (isFaultProcess && !self_test) {

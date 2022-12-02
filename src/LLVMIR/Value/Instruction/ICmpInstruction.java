@@ -4,8 +4,8 @@ import LLVMIR.Type.AbstractType;
 import LLVMIR.Value.BasicBlock;
 import LLVMIR.Value.Value;
 
-import javax.swing.*;
 import java.util.HashMap;
+import java.util.Objects;
 
 public class ICmpInstruction extends AbstractInstruction {
     private String cmpOp;
@@ -37,5 +37,18 @@ public class ICmpInstruction extends AbstractInstruction {
 
     public String toString() {
         return name + " = icmp " + cmpOp + " " + cmpType + " " + getOp1().getName() + ", " + getOp2().getName() + "\n";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof ICmpInstruction)) {
+            return false;
+        }
+        return super.equals(o) && cmpOp.equals(((ICmpInstruction) o).getCmpOp());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), cmpOp);
     }
 }

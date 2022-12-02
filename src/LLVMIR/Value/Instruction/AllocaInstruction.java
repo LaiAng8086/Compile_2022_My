@@ -5,6 +5,8 @@ import LLVMIR.Type.PointerType;
 import LLVMIR.Value.BasicBlock;
 import LLVMIR.Value.Constant.ConstantArray;
 
+import java.util.Objects;
+
 public class AllocaInstruction extends AbstractInstruction {
     private boolean isArray;    //数组指针建议保持原样
     private ConstantArray localConst;
@@ -36,5 +38,10 @@ public class AllocaInstruction extends AbstractInstruction {
         } else {
             return name + " = alloca " + ((PointerType) type).getPointee() + "\n";
         }
+    }
+
+    //Alloca 指令的結果只看返回值的名字即可
+    public int hashCode() {
+        return Objects.hash(name);
     }
 }
