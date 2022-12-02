@@ -50,6 +50,10 @@ public class BasicBlock extends Value {
         return insList;
     }
 
+    public void setInsList(LinkedList<AbstractInstruction> newn) {
+        insList = newn;
+    }
+
     public int getInstSize() {
         return insList.size();
     }

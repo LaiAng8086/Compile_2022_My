@@ -24,6 +24,8 @@ public class MulOpt {
                 if (imme == BigInteger.valueOf(2).pow(near_2pow).intValue()) {
                     // instrs.remove(index);
                     ret.add(new Sll(dst, src1, near_2pow));
+                } else {
+                    ret.add(now);
                 }
             } else {
                 ret.add(now);

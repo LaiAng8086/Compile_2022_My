@@ -14,6 +14,7 @@ import LLVMIR.Value.User;
 import LLVMIR.Value.Value;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 
 public class Translator {
@@ -36,6 +37,7 @@ public class Translator {
         loopStack = new LinkedList<>();
         breaks = new LinkedList<>();
         curArr = null;
+        addrToVirReg = new HashMap<>();
     }
 
     public void translateCompUnit(CompUnit t) {
@@ -84,6 +86,9 @@ public class Translator {
         BasicBlock newBB = new BasicBlock(String.valueOf(ctrl.getRegName()), new LabelType(), curFunction);
         curFunction.addBasicBlock(newBB);
         curBB = newBB;
+        if (OutputHandler.loadOptTest) {
+            addrToVirReg = new HashMap<>();
+        }
 
         //先要有基本块才能往里插形参的store指令
         if (t.funcfparams != null) {
@@ -118,6 +123,9 @@ public class Translator {
         BasicBlock newBB = new BasicBlock(String.valueOf(ctrl.getRegName()), new LabelType(), curFunction);
         curFunction.addBasicBlock(newBB);
         curBB = newBB;
+        if (OutputHandler.loadOptTest) {
+            addrToVirReg = new HashMap<>();
+        }
         translateBlock(t.getBlock());
 
         Module.getInstance().symbolTable.dropTable();
@@ -389,6 +397,9 @@ public class Translator {
                 BasicBlock trueBox = new BasicBlock(String.valueOf(trueBoxId), new LabelType(), curFunction);
                 curFunction.addBasicBlock(trueBox);
                 curBB = trueBox;
+                if (OutputHandler.loadOptTest) {
+                    addrToVirReg = new HashMap<>();
+                }
                 translateStmt(t.getStmt1());
                 //如果在条件成立的块中最后是break continue 或 return 则不用添加
                 if (!(curBB.getInstSize() > 0 && (curBB.getLastInst() instanceof BrInstruction ||
@@ -400,6 +411,9 @@ public class Translator {
                     BasicBlock falseBox = new BasicBlock(String.valueOf(falseBoxId), new LabelType(), curFunction);
                     curFunction.addBasicBlock(falseBox);
                     curBB = falseBox;
+                    if (OutputHandler.loadOptTest) {
+                        addrToVirReg = new HashMap<>();
+                    }
                     translateStmt(t.getElseStmt());
                     //如果在条件成立的块中最后是break continue 或 return 则不用添加
                     if (!(curBB.getInstSize() > 0 && (curBB.getLastInst() instanceof BrInstruction ||
@@ -410,6 +424,9 @@ public class Translator {
                 BasicBlock nextBox = new BasicBlock(String.valueOf(nextBoxId), new LabelType(), curFunction);
                 curFunction.addBasicBlock(nextBox);
                 curBB = nextBox;
+                if (OutputHandler.loadOptTest) {
+                    addrToVirReg = new HashMap<>();
+                }
                 break;
             case Stmt.WHILE:
                 int whileId = ctrl.getRegName();
@@ -417,6 +434,9 @@ public class Translator {
                 BasicBlock newLoopBox = new BasicBlock(String.valueOf(whileId), new LabelType(), curFunction);
                 curFunction.addBasicBlock(newLoopBox);
                 curBB = newLoopBox;
+                if (OutputHandler.loadOptTest) {
+                    addrToVirReg = new HashMap<>();
+                }
                 loopStack.add(String.valueOf(whileId));
                 ArrayList<BrInstruction> possibleBreak = new ArrayList<>();
                 breaks.add(possibleBreak);
@@ -428,6 +448,9 @@ public class Translator {
                 BasicBlock whileTrueBox = new BasicBlock(String.valueOf(whileTrueId), new LabelType(), curFunction);
                 curFunction.addBasicBlock(whileTrueBox);
                 curBB = whileTrueBox;
+                if (OutputHandler.loadOptTest) {
+                    addrToVirReg = new HashMap<>();
+                }
                 //stmt
                 translateStmt(t.getStmt1());
                 //如果在条件成立的块中最后是break continue 或 return 则不用添加
@@ -447,6 +470,9 @@ public class Translator {
                 BasicBlock whileNextBox = new BasicBlock(String.valueOf(whileNextId), new LabelType(), curFunction);
                 curFunction.addBasicBlock(whileNextBox);
                 curBB = whileNextBox;
+                if (OutputHandler.loadOptTest) {
+                    addrToVirReg = new HashMap<>();
+                }
                 break;
             case Stmt.BREAK:
                 BrInstruction brk = new BrInstruction("", new VoidType(), curBB, "DaiHuiTian");
@@ -496,6 +522,9 @@ public class Translator {
                 BasicBlock newBox = new BasicBlock(String.valueOf(nextId), new LabelType(), curFunction);
                 curFunction.addBasicBlock(newBox);
                 curBB = newBox;
+                if (OutputHandler.loadOptTest) {
+                    addrToVirReg = new HashMap<>();
+                }
                 if (i < t.landexps.size() - 1) {
                     nextId = ctrl.getRegName();
                     translateLAndExp(t.landexps.get(i), trueId, nextId);
@@ -562,6 +591,9 @@ public class Translator {
                 BasicBlock newBox = new BasicBlock(String.valueOf(nextId), new LabelType(), curFunction);
                 curFunction.addBasicBlock(newBox);
                 curBB = newBox;
+                if (OutputHandler.loadOptTest) {
+                    addrToVirReg = new HashMap<>();
+                }
                 if (i < t.eqexps.size() - 1) {
                     nextId = ctrl.getRegName();
                     translateEqExp(t.eqexps.get(i));
@@ -680,6 +712,11 @@ public class Translator {
         left = calcVal;
         StoreInstruction storeRes = new StoreInstruction("", new VoidType(), curBB, right, left);
         curBB.addInstruction(storeRes);
+        if (OutputHandler.loadOptTest) {
+            if (addrToVirReg.containsKey(left)) {
+                addrToVirReg.remove(left);
+            }
+        }
 
     }
 
@@ -713,6 +750,11 @@ public class Translator {
         curBB.addInstruction(callInput);
         StoreInstruction stoRes = new StoreInstruction("", new VoidType(), curBB, callInput, calcVal);
         curBB.addInstruction(stoRes);
+        if (OutputHandler.loadOptTest) {
+            if (addrToVirReg.containsKey(calcVal)) {
+                addrToVirReg.remove(calcVal);
+            }
+        }
     }
 
     private void outputStr(String t) {
@@ -885,14 +927,31 @@ public class Translator {
     }
 
     private Value needLoad(Value t) {
-        if (t.getType() instanceof PointerType) {
-            AbstractInstruction ret
-                    = new LoadInstruction(String.valueOf(ctrl.getRegName()),
-                    ((PointerType) t.getType()).getPointee(), curBB, t);
-            curBB.addInstruction(ret);
-            return ret;
+        if (OutputHandler.loadOptTest) {
+            if (t.getType() instanceof PointerType) {
+                //全局变量和数组必须每次都load，不然会不同步，数组是因为可能在函数外面被改
+                if (addrToVirReg.containsKey(t) && !(t instanceof GlobalVariable || t instanceof GetElementPtrInstruction)) {
+                    return addrToVirReg.get(t);
+                } else {
+                    AbstractInstruction ret
+                            = new LoadInstruction(String.valueOf(ctrl.getRegName()),
+                            ((PointerType) t.getType()).getPointee(), curBB, t);
+                    addrToVirReg.put(t, ret);
+                    curBB.addInstruction(ret);
+                    return ret;
+                }
+            }
+            return t;
+        } else {
+            if (t.getType() instanceof PointerType) {
+                AbstractInstruction ret
+                        = new LoadInstruction(String.valueOf(ctrl.getRegName()),
+                        ((PointerType) t.getType()).getPointee(), curBB, t);
+                curBB.addInstruction(ret);
+                return ret;
+            }
+            return t;
         }
-        return t;
     }
 
 
@@ -1068,6 +1127,8 @@ public class Translator {
             translateLVal(t.getLVal());
         }
     }
+
+    private HashMap<Value, Value> addrToVirReg;
 
     public void translateLVal(LVal t) {
         String varName = TokenOutput.getTokenById(t.getIdentId()).getContent();

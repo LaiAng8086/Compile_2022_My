@@ -6,7 +6,9 @@ import Frontend.OutputHandler;
 import Frontend.Syntax.Parser.CompUnitParser;
 import Frontend.Translator;
 import LLVMIR.Module;
+import LLVMIR.Type.PointerType;
 import Optimization.MulOpt;
+import Optimization.OptController;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,6 +42,9 @@ public class Compiler {
         }
         Translator trans = new Translator();
         trans.translateCompUnit(compUnitParser.getResult());
+        if (OutputHandler.Optimization) {
+            OptController.middlePass();
+        }
         if (OutputHandler.LLVMOutput) {
             Module.getInstance().output();
         }
@@ -47,7 +52,7 @@ public class Compiler {
         TranslateToMIPS getMips = new TranslateToMIPS(mipsOut);
         getMips.toMIPS();
         if (OutputHandler.Optimization) {
-            MulOpt.replaceMul2(mipsOut);
+            OptController.targetPass(mipsOut);
         }
         if (OutputHandler.MIPSOutput) {
             MIPSProgram.outputInit();
