@@ -226,21 +226,27 @@ public class Translator {
                 Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), newG);
                 Module.getInstance().addGlobalVariable(newG);
                 getConstTime = false;
-            } else    //局部常量数组
+            } else    //局部常量数组  优化！提升为全局数组，不过符号表内局部访问。数组命名带上函数名和基本块号。
             {
-                AllocaInstruction varAlloca = new AllocaInstruction(String.valueOf(ctrl.getRegName()),
-                        arrTy, curBB, true);
-                curFunction.addAlloca(varAlloca);
-                curArr = varAlloca;
-                if (t.getConstinitval() != null) {
-                    translateConstInitVal(t.getConstinitval());
-                    varAlloca.setConstInit((ConstantArray) initVal);    //!
-                    ArrayList<Value> indexs = new ArrayList<>();
-                    indexs.add(new ConstantInt(0, 32));
-                    initConstArray(varAlloca, (ConstantArray) initVal, indexs);
-                }
-                //局部变量没有初始化则不用store，只需要alloca，符号表就存alloca的指针
-                Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), varAlloca);
+                translateConstInitVal(t.getConstinitval());
+                GlobalVariable newG = new GlobalVariable(curFunction.getName().substring(1) + "_" + curBB.getName()
+                        + "_" + t.getName(), arrTy, Module.getInstance(), (ConstantArray) initVal, true);
+                newG.setConst();
+                Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), newG);
+                Module.getInstance().addGlobalVariable(newG);
+                // AllocaInstruction varAlloca = new AllocaInstruction(String.valueOf(ctrl.getRegName()),
+                //         arrTy, curBB, true);
+                // curFunction.addAlloca(varAlloca);
+                // curArr = varAlloca;
+                // if (t.getConstinitval() != null) {
+                //     translateConstInitVal(t.getConstinitval());
+                //     varAlloca.setConstInit((ConstantArray) initVal);    //!
+                //     ArrayList<Value> indexs = new ArrayList<>();
+                //     indexs.add(new ConstantInt(0, 32));
+                //     initConstArray(varAlloca, (ConstantArray) initVal, indexs);
+                // }
+                // //局部变量没有初始化则不用store，只需要alloca，符号表就存alloca的指针
+                // Module.getInstance().symbolTable.getCurrentTable().put(t.getName(), varAlloca);
             }
         }
     }

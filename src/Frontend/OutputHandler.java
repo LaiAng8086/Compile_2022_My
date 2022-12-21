@@ -14,7 +14,7 @@ public class OutputHandler {
     public static boolean MIPSOutput = true;    //MIPS汇编导出开关
     public static boolean Optimization = true;  //优化总开关
     public static boolean loadOptTest = true;   //某种实验性load开关
-    public static boolean DivOpt = false;   //除法优化开关
+    public static boolean DivOpt = true;   //除法优化开关
 
     static {
         try {

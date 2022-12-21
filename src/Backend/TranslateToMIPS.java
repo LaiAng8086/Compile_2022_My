@@ -179,13 +179,6 @@ public class TranslateToMIPS {
         } else {
             mips.addInstr(new StoreWord(regId, -grfControl.getAddress(i.getOp2().getName()), GRF.FP));
         }
-        // if (regId != -1) {  //在llvm中，其实这个Value被存过后应该就没用了。
-        //     if (i.getOp1() instanceof LoadInstruction) {
-        //         grfControl.freeAReg(regId, GRF.LOCAL);
-        //     } else {
-        //         grfControl.freeAReg(regId, GRF.TEMP);
-        //     }
-        // }
     }
 
     private void translateLoad(LoadInstruction i) {
